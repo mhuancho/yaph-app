@@ -6,6 +6,7 @@ import { HudPanel } from '../features/trends/hud-panel';
 import { CommentsStore } from '../core/state/comments-store';
 import { FeedStore } from '../core/state/feed-store';
 import { Viewport } from '../core/state/viewport';
+import { ToastHost } from '../ui/toast-host';
 import { MobileTabBar } from './mobile-tab-bar';
 import { MobileTopBar } from './mobile-top-bar';
 import { NavDock } from './nav-dock';
@@ -37,6 +38,7 @@ import { NavDock } from './nav-dock';
     HudPanel,
     CommentsThread,
     CommentsSheet,
+    ToastHost,
   ],
   host: { class: 'block h-dvh overflow-hidden' },
   template: `
@@ -71,6 +73,7 @@ import { NavDock } from './nav-dock';
     </div>
 
     <app-mobile-tab-bar />
+    <app-toast-host />
 
     @if (sheetThread(); as clip) {
       <app-comments-sheet [clip]="clip" />

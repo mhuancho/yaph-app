@@ -1,5 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CommentsStore } from '../../core/state/comments-store';
+import { ShareService } from '../../core/state/share-service';
 import { FeedStore } from '../../core/state/feed-store';
 import { VideoClip } from '../../core/models/feed';
 import { Icon } from '../../ui/icon';
@@ -18,7 +20,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
  */
 @Component({
   selector: 'app-interaction-rail',
-  imports: [Icon, CompactPipe],
+  imports: [Icon, CompactPipe, RouterLink],
   host: {
     class:
       'z-20 flex flex-col items-center gap-4 ' +
@@ -79,6 +81,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
       type="button"
       class="group/btn flex flex-col items-center gap-1.5"
       aria-label="Compartir clip"
+      (click)="shareClip()"
     >
       <span
         class="glass-flat grid size-12 place-items-center rounded-full border border-white/12 text-ink transition-[transform,border-color] duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:border-neon-cyan/60"
@@ -113,7 +116,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
 
     <!-- Disco de audio: enlaza al sonido original. -->
     <a
-      href="#contenido"
+      [routerLink]="['/sonido', clip().audio.id]"
       class="group/btn mt-1 flex flex-col items-center"
       [attr.aria-label]="'Audio original: ' + clip().audio.title"
     >
@@ -129,6 +132,16 @@ export class InteractionRail {
   readonly clip = input.required<VideoClip>();
   protected readonly feed = inject(FeedStore);
   protected readonly comments = inject(CommentsStore);
+  private readonly sharing = inject(ShareService);
+
+  protected shareClip(): void {
+    const clip = this.clip();
+    void this.sharing.share({
+      title: `${clip.creator.displayName} en YAPH`,
+      text: clip.description,
+      path: `/perfil/${clip.creator.handle}`,
+    });
+  }
 
   protected liked(): boolean {
     return this.feed.isLiked(this.clip().id);

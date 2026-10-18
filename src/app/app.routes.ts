@@ -15,6 +15,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/feed/feed-page').then((m) => m.FeedPage),
   },
   {
+    path: 'buscar',
+    title: 'YAPH — Buscar',
+    loadComponent: () => import('./features/discover/search-page').then((m) => m.SearchPage),
+  },
+  {
+    path: 'tag/:tag',
+    title: 'YAPH — Hashtag',
+    loadComponent: () => import('./features/discover/tag-page').then((m) => m.TagPage),
+  },
+  {
+    path: 'sonido/:soundId',
+    title: 'YAPH — Sonido',
+    loadComponent: () => import('./features/discover/sound-page').then((m) => m.SoundPage),
+  },
+  {
     path: 'explorar',
     title: 'YAPH — Explorar',
     data: {

@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, linkedSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CreatorProfile } from '../../core/models/feed';
+import { CreatorProfile, FeedCollection } from '../../core/models/feed';
 import { ProfileStore } from '../../core/state/profile-store';
 import { Icon } from '../../ui/icon';
 import { CompactPipe } from '../../ui/metric-pipes';
@@ -77,8 +77,7 @@ let instances = 0;
             [attr.aria-labelledby]="profiles.isMe() ? tab() + uid : null"
           >
             <app-clip-grid
-              [clips]="visible()"
-              [profile]="current"
+              [collection]="collection()"
               [pinFirst]="tab() === 'videos'"
               [emptyText]="emptyText()"
             />
@@ -123,14 +122,21 @@ export class ProfilePage {
     computation: () => 'videos',
   });
 
-  protected readonly visible = computed(() => {
+  /**
+   * Cada pestaña es una colección propia: al abrir una celda de «Guardados»,
+   * el feed debe recorrer los guardados, no las publicaciones del perfil.
+   */
+  protected readonly collection = computed<FeedCollection>(() => {
+    const profile = this.profile();
     switch (this.tab()) {
       case 'guardados':
-        return this.profiles.saved();
+        return { id: 'saved', label: 'Guardados', clips: this.profiles.saved() };
       case 'gustados':
-        return this.profiles.liked();
+        return { id: 'liked', label: 'Me gusta', clips: this.profiles.liked() };
       default:
-        return this.profiles.posts();
+        return profile
+          ? this.profiles.collectionFor(profile)
+          : { id: 'empty', label: '', clips: [] };
     }
   });
 

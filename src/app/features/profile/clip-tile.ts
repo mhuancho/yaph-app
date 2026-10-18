@@ -1,18 +1,17 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { CreatorProfile, VideoClip } from '../../core/models/feed';
+import { FeedCollection, VideoClip } from '../../core/models/feed';
 import { FeedStore } from '../../core/state/feed-store';
-import { ProfileStore } from '../../core/state/profile-store';
 import { Icon } from '../../ui/icon';
 import { CompactPipe } from '../../ui/metric-pipes';
 
 /**
  * Miniatura de la parrilla.
  *
- * Al abrirla, el feed pasa a reproducir las publicaciones de ese perfil
- * empezando por este clip: el scroll vertical recorre la obra de esa persona y
- * no la recomendación general, que es lo que hace cualquier feed vertical al
- * entrar desde un perfil.
+ * Al abrirla, el feed pasa a reproducir la colección a la que pertenece la
+ * celda empezando por este clip: el scroll vertical recorre esa lista —la obra
+ * de una persona, un hashtag, un sonido— y no la recomendación general, que es
+ * lo que hace cualquier feed vertical al entrar desde una parrilla.
  *
  * No monta un `<video>`: una parrilla de 12 miniaturas serían 12
  * decodificadores. Se dibuja el póster procedural del clip, el mismo que usa
@@ -71,12 +70,12 @@ import { CompactPipe } from '../../ui/metric-pipes';
 })
 export class ClipTile {
   readonly clip = input.required<VideoClip>();
-  readonly profile = input.required<CreatorProfile>();
+  /** Lista que el feed reproducirá al abrir esta celda. */
+  readonly collection = input.required<FeedCollection>();
   /** Primera publicación: en un perfil hace las veces de clip destacado. */
   readonly pinned = input(false);
 
   private readonly feed = inject(FeedStore);
-  private readonly profiles = inject(ProfileStore);
   private readonly router = inject(Router);
 
   protected readonly label = computed(
@@ -84,7 +83,7 @@ export class ClipTile {
   );
 
   protected open(): void {
-    this.feed.playCollection(this.profiles.collectionFor(this.profile()), this.clip().id);
+    this.feed.playCollection(this.collection(), this.clip().id);
     void this.router.navigate(['/']);
   }
 }

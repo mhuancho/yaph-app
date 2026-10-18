@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { FeedStore } from '../../core/state/feed-store';
 import { Icon } from '../../ui/icon';
 import { CreatorsCard } from './creators-card';
@@ -21,18 +22,25 @@ import { TrendingCard } from './trending-card';
       class="scrollbar-none flex h-full flex-col gap-4 overflow-y-auto"
       aria-label="Tendencias y telemetría"
     >
-      <!-- Buscador -->
-      <label
+      <!-- Buscador: al escribir se navega a la página de resultados, que es
+           quien mantiene el término en la URL. -->
+      <form
         class="glass edge-gradient edge-live flex items-center gap-2.5 rounded-glass px-3.5 py-2.5"
+        (submit)="submitSearch($event)"
       >
         <app-icon name="search" class="size-4 shrink-0 text-ink-faint" />
-        <span class="sr-only">Buscar clips, sonidos o creadores</span>
-        <input
-          type="search"
-          placeholder="Buscar clips, sonidos, creadores"
-          class="w-full bg-transparent text-[0.8125rem] text-ink placeholder:text-ink-faint focus:outline-none"
-        />
-      </label>
+        <label class="w-full">
+          <span class="sr-only">Buscar clips, sonidos o creadores</span>
+          <input
+            name="q"
+            type="search"
+            enterkeyhint="search"
+            placeholder="Buscar clips, sonidos, creadores"
+            class="w-full bg-transparent text-[0.8125rem] text-ink placeholder:text-ink-faint focus:outline-none"
+            (focus)="goToSearch()"
+          />
+        </label>
+      </form>
 
       <app-telemetry-card />
       <app-trending-card />
@@ -60,6 +68,21 @@ import { TrendingCard } from './trending-card';
 })
 export class HudPanel {
   protected readonly feed = inject(FeedStore);
+  private readonly router = inject(Router);
+
+  /**
+   * Enfocar el campo lleva a la página de resultados en vez de desplegar un
+   * panel flotante: la búsqueda tiene URL propia y así se puede compartir.
+   */
+  protected goToSearch(): void {
+    void this.router.navigate(['/buscar']);
+  }
+
+  protected submitSearch(event: Event): void {
+    event.preventDefault();
+    const value = new FormData(event.target as HTMLFormElement).get('q');
+    void this.router.navigate(['/buscar'], { queryParams: { q: value || null } });
+  }
 
   /**
    * Al desmontarse la tarjeta se para también su temporizador: el stream

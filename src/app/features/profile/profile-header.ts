@@ -1,8 +1,9 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CreatorProfile } from '../../core/models/feed';
 import { FeedStore } from '../../core/state/feed-store';
 import { ProfileStore } from '../../core/state/profile-store';
+import { ShareService } from '../../core/state/share-service';
 import { AvatarOrb } from '../../ui/avatar-orb';
 import { HoloBadge } from '../../ui/holo-badge';
 import { Icon } from '../../ui/icon';
@@ -17,7 +18,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
  */
 @Component({
   selector: 'app-profile-header',
-  imports: [AvatarOrb, HoloBadge, Icon, CompactPipe],
+  imports: [AvatarOrb, HoloBadge, Icon, CompactPipe, RouterLink],
   host: { class: 'block' },
   styles: `
     /* Anillo del directo: un cónico girando bajo el avatar, recortado a un
@@ -107,6 +108,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
               type="button"
               class="grid size-9 place-items-center rounded-full border border-white/15 text-ink-muted transition-colors duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"
               aria-label="Compartir perfil"
+              (click)="shareProfile()"
             >
               <app-icon name="share" class="size-4" />
             </button>
@@ -120,13 +122,14 @@ import { CompactPipe } from '../../ui/metric-pipes';
             >
               {{ followed() ? 'Siguiendo' : 'Seguir' }}
             </button>
-            <button
-              type="button"
+            <a
+              [routerLink]="['/mensajes']"
+              [queryParams]="{ con: profile().handle }"
               class="grid size-9 place-items-center rounded-full border border-white/15 text-ink-muted transition-colors duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"
               [attr.aria-label]="'Enviar mensaje a ' + profile().handle"
             >
               <app-icon name="messages" class="size-4" />
-            </button>
+            </a>
           }
 
           @if (profiles.isLive()) {
@@ -150,7 +153,9 @@ import { CompactPipe } from '../../ui/metric-pipes';
 
         @if (profile().link; as link) {
           <a
-            href="#contenido"
+            [href]="'https://' + link"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
             class="metric mt-1.5 inline-flex items-center gap-1.5 text-[0.75rem] text-neon-cyan transition-opacity hover:opacity-80"
           >
             <app-icon name="explore" class="size-3.5" />
@@ -167,6 +172,16 @@ export class ProfileHeader {
   protected readonly profiles = inject(ProfileStore);
   private readonly feed = inject(FeedStore);
   private readonly router = inject(Router);
+  private readonly sharing = inject(ShareService);
+
+  protected shareProfile(): void {
+    const profile = this.profile();
+    void this.sharing.share({
+      title: `${profile.displayName} en YAPH`,
+      text: profile.bio,
+      path: `/perfil/${profile.handle}`,
+    });
+  }
 
   protected readonly liveViewers = computed(() => this.profiles.liveClip()?.liveViewers ?? null);
 

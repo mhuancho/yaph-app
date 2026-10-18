@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FeedStore } from '../core/state/feed-store';
+import { RouterLink } from '@angular/router';
 import { Icon } from '../ui/icon';
 import { BrandMark } from './brand-mark';
 
@@ -13,7 +14,7 @@ import { BrandMark } from './brand-mark';
  */
 @Component({
   selector: 'app-mobile-top-bar',
-  imports: [Icon, BrandMark],
+  imports: [Icon, BrandMark, RouterLink],
   host: { class: 'contents' },
   template: `
     <header
@@ -22,13 +23,13 @@ import { BrandMark } from './brand-mark';
       <app-brand-mark class="pointer-events-auto" [showWordmark]="true" />
 
       <div class="ml-auto flex items-center gap-2">
-        <button
-          type="button"
+        <a
+          routerLink="/buscar"
           class="glass-flat pointer-events-auto grid size-9 place-items-center rounded-full border border-white/12 text-ink-muted transition-colors active:text-neon-cyan"
           aria-label="Buscar"
         >
           <app-icon name="search" class="size-[1.1rem]" />
-        </button>
+        </a>
 
         <button
           type="button"

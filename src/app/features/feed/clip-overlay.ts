@@ -112,7 +112,7 @@ const COLLAPSE_THRESHOLD = 110;
         @for (tag of clip().hashtags; track tag) {
           <li>
             <a
-              href="#contenido"
+              [routerLink]="['/tag', tag.slice(1)]"
               class="metric inline-block rounded-full border border-white/12 px-2 py-[3px] text-[0.6875rem] text-neon-cyan transition-[background-color,border-color] duration-200 hover:border-neon-cyan/50 hover:bg-neon-cyan/10"
             >
               {{ tag }}
@@ -124,10 +124,13 @@ const COLLAPSE_THRESHOLD = 110;
       <!-- Audio original -->
       <div class="flex items-center gap-2.5 text-neon-cyan">
         <app-icon name="music" class="size-3.5 shrink-0" />
-        <p class="min-w-0 truncate text-xs text-ink">
+        <a
+          [routerLink]="['/sonido', clip().audio.id]"
+          class="min-w-0 truncate text-xs text-ink transition-colors hover:text-neon-cyan"
+        >
           <span class="font-medium">{{ clip().audio.title }}</span>
           <span class="text-ink-muted"> · {{ clip().audio.author }}</span>
-        </p>
+        </a>
         <app-soundwave
           class="ml-auto shrink-0"
           [envelope]="clip().audio.envelope"

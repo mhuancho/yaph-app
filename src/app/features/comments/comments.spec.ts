@@ -142,12 +142,12 @@ describe('Hilo de comentarios', () => {
     const feed = TestBed.inject(FeedStore);
 
     expect(feed.activeClip()?.kind).toBe('short');
-    expect(host.querySelector('[aria-live="polite"]')).toBeNull();
+    expect(host.querySelector('app-live-comments-card')).toBeNull();
 
     feed.setActiveIndex(LIVE_INDEX);
     await fixture.whenStable();
 
-    expect(host.querySelector('[aria-live="polite"]')).toBeTruthy();
+    expect(host.querySelector('app-live-comments-card ul[aria-live="polite"]')).toBeTruthy();
   });
 
   describe('respuestas', () => {
@@ -312,9 +312,9 @@ describe('Hilo de comentarios', () => {
       submitComposer(host);
       await fixture.whenStable();
 
-      expect(host.querySelector('[aria-live="polite"]')!.textContent).toContain(
-        'buenas desde Lima 👋',
-      );
+      expect(
+        host.querySelector('app-live-chat-list ol[aria-live="polite"]')!.textContent,
+      ).toContain('buenas desde Lima 👋');
       // El hilo persistente del clip no se toca.
       expect(TestBed.inject(CommentsStore).countFor(feed.activeClip()!)).toBe(
         feed.activeClip()!.metrics.comments,

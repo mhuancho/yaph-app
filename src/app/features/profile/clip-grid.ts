@@ -1,5 +1,5 @@
-import { Component, input } from '@angular/core';
-import { CreatorProfile, VideoClip } from '../../core/models/feed';
+import { Component, computed, input } from '@angular/core';
+import { FeedCollection } from '../../core/models/feed';
 import { ClipTile } from './clip-tile';
 
 /**
@@ -16,7 +16,11 @@ import { ClipTile } from './clip-tile';
       <ul class="grid grid-cols-3 gap-0.5">
         @for (clip of clips(); track clip.id; let first = $first) {
           <li>
-            <app-clip-tile [clip]="clip" [profile]="profile()" [pinned]="first && pinFirst()" />
+            <app-clip-tile
+              [clip]="clip"
+              [collection]="collection()"
+              [pinned]="first && pinFirst()"
+            />
           </li>
         }
       </ul>
@@ -26,8 +30,9 @@ import { ClipTile } from './clip-tile';
   `,
 })
 export class ClipGrid {
-  readonly clips = input.required<readonly VideoClip[]>();
-  readonly profile = input.required<CreatorProfile>();
+  readonly collection = input.required<FeedCollection>();
   readonly emptyText = input('Todavía no hay nada por aquí.');
   readonly pinFirst = input(false);
+
+  protected readonly clips = computed(() => this.collection().clips);
 }
