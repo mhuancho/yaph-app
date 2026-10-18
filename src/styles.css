@@ -1,0 +1,289 @@
+/* ---------------------------------------------------------------------------
+ * YAPH — sistema de diseño global (Tailwind CSS v4)
+ *
+ * Los tokens viven en `@theme`, por lo que Tailwind genera utilidades a partir
+ * de ellos (`bg-void`, `text-neon-cyan`, `shadow-neon-cyan`, `font-mono`...).
+ * Las utilidades compuestas se declaran con `@utility` para poder combinarlas
+ * con variantes (`hover:`, `md:`, `group-hover:`) igual que las nativas.
+ * ------------------------------------------------------------------------- */
+
+@import 'tailwindcss';
+
+@theme {
+  /* Superficies ------------------------------------------------------------ */
+  --color-abyss: #050508;
+  --color-void: #07070a;
+  --color-carbon: #0d0d14;
+  --color-slate-hud: #12121c;
+
+  /* Acentos neón ---------------------------------------------------------- */
+  --color-neon-cyan: #00f5d4;
+  --color-neon-magenta: #ff2a85;
+  --color-neon-violet: #7c5cff;
+  --color-neon-amber: #ffb020;
+
+  /* Texto ----------------------------------------------------------------- */
+  --color-ink: #f2f5ff;
+  --color-ink-muted: #a9b2cb;
+  --color-ink-faint: #6f7893;
+
+  /* Tipografía ------------------------------------------------------------ */
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+
+  /* Radios ---------------------------------------------------------------- */
+  --radius-glass: 1.25rem;
+  --radius-stage: 1.75rem;
+
+  /* Resplandores ----------------------------------------------------------
+   * `shadow-neon-*` para botones y bordes vivos; los valores se mantienen por
+   * debajo de 24px de blur porque un box-shadow grande sobre un elemento que
+   * se repinta cada frame (contadores, hover) obliga a recomponer capas. */
+  --shadow-neon-cyan: 0 0 20px rgb(0 245 212 / 0.3);
+  --shadow-neon-cyan-strong: 0 0 28px rgb(0 245 212 / 0.45);
+  --shadow-neon-magenta: 0 0 20px rgb(255 42 133 / 0.32);
+  --shadow-neon-magenta-strong: 0 0 28px rgb(255 42 133 / 0.5);
+  --shadow-hud: 0 18px 50px -24px rgb(0 0 0 / 0.9);
+
+  /* Animaciones ----------------------------------------------------------- */
+  --animate-pulse-neon: pulse-neon 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-breathe: breathe 6s ease-in-out infinite;
+  --animate-scan: scan 7s linear infinite;
+  --animate-ticker: ticker 0.5s ease-out;
+
+  @keyframes pulse-neon {
+    0% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 rgb(255 42 133 / 0.9));
+    }
+    45% {
+      transform: scale(1.28);
+      filter: drop-shadow(0 0 14px rgb(255 42 133 / 0.85));
+    }
+    100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 6px rgb(255 42 133 / 0.4));
+    }
+  }
+
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 0.45;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes scan {
+    0% {
+      transform: translateY(-110%);
+    }
+    100% {
+      transform: translateY(110%);
+    }
+  }
+
+  @keyframes ticker {
+    0% {
+      transform: translateY(45%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Fuera de `@theme` a propósito: Tailwind solo emite los keyframes del tema
+ * cuando se usa su utilidad `animate-*`, y estas barras necesitan duración y
+ * retardo propios por índice, así que la animación se declara en el
+ * componente y el keyframe debe existir siempre. */
+@keyframes wave-bar {
+  0%,
+  100% {
+    transform: scaleY(0.22);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------- */
+@layer base {
+  :root {
+    color-scheme: dark;
+
+    /* Acento ambiental: lo sobrescribe cada clip del feed para teñir el fondo. */
+    --ambient-from: var(--color-neon-cyan);
+    --ambient-to: var(--color-neon-magenta);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-abyss);
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-feature-settings:
+      'ss01' on,
+      'cv01' on;
+    /* El fondo general es negro profundo con gradientes radiales muy tenues.
+     * Van en `body` (no en un div) para que no participen en el stacking
+     * context del feed y no fuercen repintados al hacer scroll. */
+    background-image:
+      radial-gradient(60rem 60rem at 12% -10%, rgb(0 245 212 / 0.08), transparent 65%),
+      radial-gradient(52rem 52rem at 92% 8%, rgb(255 42 133 / 0.07), transparent 62%),
+      radial-gradient(70rem 50rem at 50% 115%, rgb(124 92 255 / 0.07), transparent 70%);
+    background-attachment: fixed;
+  }
+
+  /* Anillo de foco visible sobre fondo oscuro: requisito WCAG 2.4.7 que las
+   * interfaces "solo hover" suelen perder. */
+  :focus-visible {
+    outline: 2px solid var(--color-neon-cyan);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  ::selection {
+    background: rgb(0 245 212 / 0.28);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Utilidades compuestas
+ * ------------------------------------------------------------------------- */
+
+/* Cristal "real": blur + saturación. Reservado para superficies que NO se
+ * solapan con un <video> en reproducción (dock, panel HUD, hojas modales).
+ * Sobre video, `backdrop-filter` obliga al compositor a releer el frame en
+ * cada repintado y hunde los FPS en móvil.
+ *
+ * No incluye borde: cada llamada declara el suyo (`border`, `border-t`, o el
+ * degradado de `edge-gradient`). Si la utilidad pusiera `border: 1px solid`,
+ * anularlo parcialmente dependería del orden dentro de la capa `utilities`. */
+@utility glass {
+  background-color: rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Variante sin blur para capas encima del video: misma lectura visual
+ * (translúcida) con coste de composición casi nulo. */
+@utility glass-flat {
+  background-color: rgb(12 12 20 / 0.55);
+}
+
+/* Borde con degradado cian→magenta: un `::after` del tamaño del elemento con
+ * el degradado y una máscara `exclude` que vacía el interior, dejando solo el
+ * anillo de 1px. Más barato que animar un `border-image` y hereda el radio. */
+@utility edge-gradient {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgb(0 245 212 / 0.55),
+      rgb(255 42 133 / 0.35) 48%,
+      rgb(124 92 255 / 0.4)
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    opacity: 0.6;
+    transition: opacity 240ms ease;
+    pointer-events: none;
+  }
+}
+
+/* Micro-interacción de hover: ilumina el borde degradado de la tarjeta. */
+@utility edge-live {
+  &:hover::after,
+  &:focus-within::after {
+    opacity: 1;
+  }
+}
+
+/* Rejilla técnica tenue para las tarjetas HUD. */
+@utility hud-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Oculta la barra de scroll manteniendo el scroll accesible por teclado. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Texto de métrica: monoespaciado, tabular, para que los contadores no
+ * "salten" al cambiar de dígito. */
+@utility metric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------------------
+ * Preferencias del usuario
+ * ------------------------------------------------------------------------- */
+
+/* Movimiento reducido: se eliminan animaciones decorativas, no la
+ * funcionalidad. El autoplay del feed se gobierna desde TS (ReducedMotion). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Transparencia reducida (macOS/Windows "reduce transparency"): el blur se
+ * cambia por superficies opacas, que además es el camino rápido en GPU. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-flat {
+    background-color: rgb(13 13 20 / 0.96);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Más contraste: bordes y texto secundario suben de nivel. */
+@media (prefers-contrast: more) {
+  :root {
+    --color-ink-muted: #d6dcec;
+    --color-ink-faint: #a9b2cb;
+  }
+
+  .glass,
+  .glass-flat {
+    border-color: rgb(255 255 255 / 0.32);
+  }
+}
