@@ -4,6 +4,7 @@ import { CreatorProfile, FeedCollection } from '../../core/models/feed';
 import { ProfileStore } from '../../core/state/profile-store';
 import { Icon } from '../../ui/icon';
 import { CompactPipe } from '../../ui/metric-pipes';
+import { AnalyticsPanel } from './analytics-panel';
 import { ClipGrid } from './clip-grid';
 import { ProfileHeader } from './profile-header';
 
@@ -23,7 +24,7 @@ let instances = 0;
  */
 @Component({
   selector: 'app-profile-page',
-  imports: [ProfileHeader, ClipGrid, Icon, RouterLink, CompactPipe],
+  imports: [ProfileHeader, ClipGrid, Icon, RouterLink, CompactPipe, AnalyticsPanel],
   host: { class: 'block h-full' },
   template: `
     <div class="scrollbar-none h-full overflow-y-auto pt-20 pb-28 md:pt-6 md:pb-8">
@@ -68,6 +69,12 @@ let instances = 0;
                 {{ profiles.totalViews() | compact }} reproducciones
               </span>
             </p>
+          }
+
+          @if (profiles.isMe() && tab() === 'videos') {
+            <div class="mt-5">
+              <app-analytics-panel [posts]="profiles.posts()" />
+            </div>
           }
 
           <div

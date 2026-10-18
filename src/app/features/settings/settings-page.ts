@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { ModerationStore } from '../../core/state/moderation-store';
 import { DataSaver, SettingsStore } from '../../core/state/settings-store';
 import { ToastStore } from '../../core/state/toast-store';
 import { Icon } from '../../ui/icon';
@@ -120,6 +121,30 @@ const DATA_SAVER_OPTIONS = [
 
         <section class="mt-6">
           <h2 class="metric text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
+            Privacidad
+          </h2>
+          <div class="glass mt-2 flex items-center gap-3 rounded-glass border border-white/10 p-4">
+            <span class="min-w-0 flex-1">
+              <span class="block text-[0.875rem] text-ink">Cuentas bloqueadas</span>
+              <span class="block text-[0.75rem] text-ink-muted">
+                No verás sus clips en ningún feed.
+              </span>
+            </span>
+            <span class="metric shrink-0 text-sm text-ink">{{ moderation.blockedCount() }}</span>
+            @if (moderation.blockedCount() > 0) {
+              <button
+                type="button"
+                class="metric shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-[0.625rem] text-ink-muted transition-colors hover:text-ink"
+                (click)="unblockAll()"
+              >
+                Desbloquear
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="mt-6">
+          <h2 class="metric text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
             Datos locales
           </h2>
           <p class="mt-2 text-[0.8125rem] text-ink-muted">
@@ -141,9 +166,15 @@ const DATA_SAVER_OPTIONS = [
 })
 export class SettingsPage {
   protected readonly settings = inject(SettingsStore);
+  protected readonly moderation = inject(ModerationStore);
   private readonly toasts = inject(ToastStore);
 
   protected readonly dataSavers = DATA_SAVER_OPTIONS;
+
+  protected unblockAll(): void {
+    this.moderation.unblockAll();
+    this.toasts.show('Cuentas desbloqueadas', 'ok');
+  }
 
   protected reset(): void {
     this.settings.reset();

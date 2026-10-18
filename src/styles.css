@@ -22,6 +22,16 @@
   --color-neon-violet: #7c5cff;
   --color-neon-amber: #ffb020;
 
+  /* Color de marca de datos.
+   *
+   * No es `--color-neon-cyan`: ese tono tiene L 0.87, fuera de la banda
+   * categórica, y validado contra la superficie de las tarjetas falla. Este
+   * paso del mismo tono pasa las seis comprobaciones como serie única.
+   *
+   * Los tres neones de marca NO forman paleta categórica: su separación en
+   * deuteranopia cae a ΔE 4.5. Por eso los gráficos usan una sola serie. */
+  --color-chart-1: #13a894;
+
   /* Texto ----------------------------------------------------------------- */
   --color-ink: #f2f5ff;
   --color-ink-muted: #a9b2cb;

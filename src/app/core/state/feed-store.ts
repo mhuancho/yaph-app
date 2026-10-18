@@ -2,6 +2,7 @@ import { computed, inject, linkedSignal, Service, signal } from '@angular/core';
 import { ALL_CLIPS } from '../data/catalog';
 import { MOCK_CLIPS } from '../data/mock-feed';
 import { FeedCollection, VideoClip } from '../models/feed';
+import { ModerationStore } from './moderation-store';
 import { PersistentState } from './persistent-state';
 import { SettingsStore } from './settings-store';
 
@@ -23,6 +24,7 @@ export class FeedStore {
   // inicializarse, y las propiedades de clase se evalúan en orden.
   private readonly store = inject(PersistentState);
   private readonly settings = inject(SettingsStore);
+  private readonly moderation = inject(ModerationStore);
 
   /**
    * Colección en reproducción. «Para ti» es un ranking y la parrilla de un
@@ -32,7 +34,17 @@ export class FeedStore {
   private readonly current = signal<FeedCollection>(FOR_YOU);
 
   readonly collection = computed(() => this.current());
-  readonly clips = computed(() => this.current().clips);
+
+  /**
+   * Lo bloqueado y lo ocultado se filtra aquí y no al construir cada
+   * colección: así vale para «Para ti», para un perfil y para un hashtag
+   * sin repetir la regla en cada sitio.
+   */
+  readonly clips = computed(() =>
+    this.current().clips.filter(
+      (clip) => !this.moderation.isHidden(clip.id) && !this.moderation.isBlocked(clip.creator.id),
+    ),
+  );
   readonly activeIndex = signal(0);
 
   readonly activeClip = computed<VideoClip | null>(() => this.clips()[this.activeIndex()] ?? null);

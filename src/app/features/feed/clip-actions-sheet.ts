@@ -1,6 +1,7 @@
 import { afterNextRender, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { ClipActionsStore } from '../../core/state/clip-actions-store';
 import { FeedStore } from '../../core/state/feed-store';
+import { REPORT_REASONS } from '../../core/state/moderation-store';
 import { Icon } from '../../ui/icon';
 
 /**
@@ -77,26 +78,58 @@ import { Icon } from '../../ui/icon';
           {{ clip.creator.handle }} · {{ clip.description }}
         </p>
 
-        <ul class="pb-3">
-          <li>
-            <button type="button" class="row" (click)="actions.toggleSave()">
-              <app-icon name="bookmark" class="size-4" [filled]="feed.isSaved(clip.id)" />
-              {{ feed.isSaved(clip.id) ? 'Quitar de guardados' : 'Guardar clip' }}
-            </button>
-          </li>
-          <li>
-            <button type="button" class="row" (click)="actions.share()">
-              <app-icon name="share" class="size-4" />
-              Compartir
-            </button>
-          </li>
-          <li>
-            <button type="button" class="row" (click)="actions.notInterested()">
-              <app-icon name="close" class="size-4" />
-              No me interesa
-            </button>
-          </li>
-        </ul>
+        @if (actions.reporting()) {
+          <!-- Denunciar pide motivo: una denuncia sin categoría no sirve a
+               quien la revisa. -->
+          <p class="px-5 pb-1 text-[0.8125rem] text-ink">¿Por qué denuncias este clip?</p>
+          <ul class="pb-3">
+            @for (reason of reasons; track reason) {
+              <li>
+                <button type="button" class="row" (click)="actions.sendReport(reason)">
+                  <span class="size-1.5 rounded-full bg-neon-magenta"></span>
+                  {{ reason }}
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <ul class="pb-3">
+            <li>
+              <button type="button" class="row" (click)="actions.toggleSave()">
+                <app-icon name="bookmark" class="size-4" [filled]="feed.isSaved(clip.id)" />
+                {{ feed.isSaved(clip.id) ? 'Quitar de guardados' : 'Guardar clip' }}
+              </button>
+            </li>
+            <li>
+              <button type="button" class="row" (click)="actions.share()">
+                <app-icon name="share" class="size-4" />
+                Compartir
+              </button>
+            </li>
+            <li>
+              <button type="button" class="row" (click)="actions.notInterested()">
+                <app-icon name="close" class="size-4" />
+                No me interesa
+              </button>
+            </li>
+            <li>
+              <button type="button" class="row text-neon-magenta" (click)="actions.startReport()">
+                <app-icon name="bolt" class="size-4" />
+                Denunciar
+              </button>
+            </li>
+            <li>
+              <button type="button" class="row text-neon-magenta" (click)="actions.toggleBlock()">
+                <app-icon name="profile" class="size-4" />
+                {{
+                  actions.moderation.isBlocked(clip.creator.id)
+                    ? 'Desbloquear a ' + clip.creator.handle
+                    : 'Bloquear a ' + clip.creator.handle
+                }}
+              </button>
+            </li>
+          </ul>
+        }
       }
     </dialog>
   `,
@@ -104,6 +137,7 @@ import { Icon } from '../../ui/icon';
 export class ClipActionsSheet {
   protected readonly actions = inject(ClipActionsStore);
   protected readonly feed = inject(FeedStore);
+  protected readonly reasons = REPORT_REASONS;
 
   private readonly sheetRef = viewChild.required<ElementRef<HTMLDialogElement>>('sheet');
 
