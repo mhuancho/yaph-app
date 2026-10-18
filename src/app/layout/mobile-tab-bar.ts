@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Icon } from '../ui/icon';
 import { FeedStore } from '../core/state/feed-store';
+import { MessagesStore } from '../core/state/messages-store';
 import { NAV_ITEMS, NavItem } from './nav-items';
 
 /**
@@ -48,11 +49,11 @@ import { NAV_ITEMS, NavItem } from './nav-items';
                 <app-icon [name]="item.icon" class="size-[1.3rem]" />
                 <span class="text-[0.5625rem] font-medium tracking-wide">{{ item.label }}</span>
 
-                @if (item.badge !== null) {
+                @if (badgeFor(item); as count) {
                   <span
                     class="metric absolute top-0 right-1.5 grid min-w-4 place-items-center rounded-full bg-neon-magenta px-1 text-[0.5625rem] font-bold text-abyss"
                   >
-                    {{ item.badge }}
+                    {{ count }}
                     <span class="sr-only">sin leer</span>
                   </span>
                 }
@@ -65,6 +66,13 @@ import { NAV_ITEMS, NavItem } from './nav-items';
   `,
 })
 export class MobileTabBar {
+  private readonly messages = inject(MessagesStore);
+
+  /** `0` es falsy, así que `@if (…; as count)` oculta la insignia vacía. */
+  protected badgeFor(item: NavItem): number {
+    return item.badge === 'mensajes' ? this.messages.unreadTotal() : 0;
+  }
+
   private readonly feed = inject(FeedStore);
   protected readonly navItems = NAV_ITEMS;
 

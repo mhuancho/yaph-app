@@ -32,12 +32,7 @@ export const routes: Routes = [
   {
     path: 'explorar',
     title: 'YAPH — Explorar',
-    data: {
-      heading: 'Explorar',
-      blurb: 'Rejilla de descubrimiento por sonido, hashtag y región.',
-      icon: 'explore',
-    },
-    loadComponent: () => import('./features/stub/stub-page').then((m) => m.StubPage),
+    loadComponent: () => import('./features/discover/explore-page').then((m) => m.ExplorePage),
   },
   {
     path: 'crear',
@@ -52,12 +47,7 @@ export const routes: Routes = [
   {
     path: 'mensajes',
     title: 'YAPH — Mensajes',
-    data: {
-      heading: 'Mensajes',
-      blurb: 'Hilos directos y respuestas a tus clips.',
-      icon: 'messages',
-    },
-    loadComponent: () => import('./features/stub/stub-page').then((m) => m.StubPage),
+    loadComponent: () => import('./features/messages/messages-page').then((m) => m.MessagesPage),
   },
   {
     path: 'perfil',

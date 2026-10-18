@@ -167,6 +167,21 @@ export interface LiveComment {
   readonly own: boolean;
 }
 
+/** Mensaje directo. La autoría es binaria: o es tuyo o es de la otra persona. */
+export interface DirectMessage {
+  readonly id: string;
+  readonly mine: boolean;
+  readonly body: string;
+  readonly ageMinutes: number;
+}
+
+export interface Conversation {
+  readonly id: string;
+  readonly peer: CommentAuthor;
+  readonly messages: readonly DirectMessage[];
+  readonly unread: number;
+}
+
 export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 
 /** Telemetría real del elemento de video activo (no son cifras decorativas). */

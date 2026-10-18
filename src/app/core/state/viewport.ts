@@ -1,10 +1,13 @@
-import { DestroyRef, inject, Service, signal } from '@angular/core';
+import { DestroyRef, inject, Service, signal, WritableSignal } from '@angular/core';
 
 /**
  * El punto de ruptura que decide si existe la columna derecha.
  * 64rem es el `lg` de Tailwind: debe coincidir con el `lg:` del armazón.
  */
 const SIDE_PANEL_QUERY = '(min-width: 64rem)';
+
+/** Por debajo del `md` de Tailwind no caben dos paneles uno al lado del otro. */
+const COMPACT_QUERY = '(max-width: 47.9375rem)';
 
 /**
  * Expone como signal si la ventana tiene columna derecha.
@@ -16,20 +19,24 @@ const SIDE_PANEL_QUERY = '(min-width: 64rem)';
  */
 @Service()
 export class Viewport {
-  private readonly query = readQuery();
-  readonly hasSidePanel = signal(this.query?.matches ?? false);
+  readonly hasSidePanel = signal(false);
+  /** Pantalla estrecha: las vistas maestro-detalle muestran una cosa u otra. */
+  readonly isCompact = signal(false);
 
   constructor() {
-    const query = this.query;
-    if (!query) return;
-
-    const onChange = (event: MediaQueryListEvent) => this.hasSidePanel.set(event.matches);
-    query.addEventListener('change', onChange);
-    inject(DestroyRef).onDestroy(() => query.removeEventListener('change', onChange));
+    const destroyRef = inject(DestroyRef);
+    track(SIDE_PANEL_QUERY, this.hasSidePanel, destroyRef);
+    track(COMPACT_QUERY, this.isCompact, destroyRef);
   }
 }
 
-function readQuery(): MediaQueryList | null {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
-  return window.matchMedia(SIDE_PANEL_QUERY);
+function track(query: string, target: WritableSignal<boolean>, destroyRef: DestroyRef): void {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+
+  const list = window.matchMedia(query);
+  target.set(list.matches);
+
+  const onChange = (event: MediaQueryListEvent) => target.set(event.matches);
+  list.addEventListener('change', onChange);
+  destroyRef.onDestroy(() => list.removeEventListener('change', onChange));
 }
