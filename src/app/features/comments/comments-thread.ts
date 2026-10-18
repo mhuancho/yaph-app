@@ -12,8 +12,8 @@ import {
 } from '@angular/core';
 import { ClipComment, VideoClip } from '../../core/models/feed';
 import { COMMENT_MAX_LENGTH, CommentsStore } from '../../core/state/comments-store';
+import { SessionStore } from '../../core/state/session-store';
 import { TrendsStore } from '../../core/state/trends-store';
-import { CURRENT_USER } from '../../core/data/mock-comments';
 import { AvatarOrb } from '../../ui/avatar-orb';
 import { EmojiPicker } from '../../ui/emoji-picker';
 import { Icon } from '../../ui/icon';
@@ -172,7 +172,7 @@ let instances = 0;
 
       <form class="px-4 py-3" (submit)="submit($event)">
         <div class="flex items-end gap-2.5">
-          <app-avatar-orb class="mb-1" [creator]="currentUser" size="sm" />
+          <app-avatar-orb class="mb-1" [creator]="currentUser()" size="sm" />
 
           <!-- El campo ocupa toda la fila y el selector de emoji va dentro:
                repartido en columnas, el placeholder no cabía en una línea y se
@@ -238,8 +238,10 @@ export class CommentsThread {
 
   protected readonly comments = inject(CommentsStore);
   private readonly trends = inject(TrendsStore);
+  private readonly session = inject(SessionStore);
 
-  protected readonly currentUser = CURRENT_USER;
+  /** Quien firma lo que se escribe aquí: el perfil de la sesión. */
+  protected readonly currentUser = this.session.profile;
   protected readonly maxLength = COMMENT_MAX_LENGTH;
   protected readonly warnRemaining = WARN_REMAINING;
   protected readonly uid = `-${(instances += 1)}`;

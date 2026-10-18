@@ -1,7 +1,7 @@
-import { Service, signal } from '@angular/core';
-import { CURRENT_USER } from '../data/mock-comments';
+import { inject, Service, signal } from '@angular/core';
 import { MOCK_LIVE_COMMENTS, MOCK_SUGGESTED, MOCK_TRENDING } from '../data/mock-feed';
 import { LiveComment } from '../models/feed';
+import { SessionStore } from './session-store';
 
 const VISIBLE_COMMENTS = 5;
 const DEFAULT_INTERVAL_MS = 3_200;
@@ -20,6 +20,8 @@ const DEFAULT_INTERVAL_MS = 3_200;
  */
 @Service()
 export class TrendsStore {
+  private readonly session = inject(SessionStore);
+
   readonly trending = signal(MOCK_TRENDING);
   readonly suggested = signal(MOCK_SUGGESTED);
   readonly liveComments = signal<readonly LiveComment[]>(
@@ -58,14 +60,15 @@ export class TrendsStore {
     const text = body.trim();
     if (text.length === 0) return false;
 
+    const author = this.session.profile();
     this.cursor += 1;
     this.liveComments.update((comments) =>
       [
         {
           id: `lc-own-${this.cursor}`,
-          handle: CURRENT_USER.handle,
+          handle: author.handle,
           body: text,
-          accent: CURRENT_USER.avatar.from,
+          accent: author.avatar.from,
           own: true,
         },
         ...comments,

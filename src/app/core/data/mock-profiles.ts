@@ -10,10 +10,15 @@ import { clipSources, CREATORS, MOCK_CLIPS, track } from './mock-feed';
  * listado por autor. Sustituir cada uno por su endpoint no toca al otro.
  */
 
-/** Quien usa la app. */
+/**
+ * Perfil propio por defecto: los contadores y la biblioteca de demostración
+ * sobre los que la sesión escribe la identidad real (handle, nombre y avatar).
+ * El handle cumple el mismo formato que exige la pantalla de identidad, para
+ * que el valor de ejemplo no sea uno que la aplicación rechazaría.
+ */
 export const CURRENT_PROFILE: CreatorProfile = {
   id: 'me',
-  handle: '@tú',
+  handle: '@tu.perfil',
   displayName: 'Tu Perfil',
   avatar: { from: '#00F5D4', to: '#7C5CFF' },
   badge: null,

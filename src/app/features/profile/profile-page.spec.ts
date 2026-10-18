@@ -6,6 +6,7 @@ import { App } from '../../app';
 import { MOCK_CLIPS } from '../../core/data/mock-feed';
 import { CURRENT_PROFILE, MOCK_LIBRARY } from '../../core/data/mock-profiles';
 import { FeedStore } from '../../core/state/feed-store';
+import { SessionStore } from '../../core/state/session-store';
 import { Viewport } from '../../core/state/viewport';
 
 const DESKTOP_VIEWPORT = { hasSidePanel: signal(true) };
@@ -30,6 +31,10 @@ describe('ProfilePage', () => {
   });
 
   async function openProfile(url: string) {
+    // El perfil propio está tras el guard de sesión: sin identidad, `/perfil`
+    // redirige a la pantalla de acceso.
+    TestBed.inject(SessionStore).signIn('tu.perfil', CURRENT_PROFILE.displayName);
+
     const fixture = TestBed.createComponent(App);
     await TestBed.inject(Router).navigateByUrl(url);
     await fixture.whenStable();

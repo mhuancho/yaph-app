@@ -7,15 +7,6 @@ import { ClipComment, CommentAuthor } from '../models/feed';
  * este módulo por una llamada paginada (`resource()` + cursor) no toca la UI.
  */
 
-/** Quien usa la app: autor de los comentarios que se publican desde el panel. */
-export const CURRENT_USER: CommentAuthor = {
-  id: 'me',
-  handle: '@tú',
-  displayName: 'Tu Perfil',
-  avatar: { from: '#00F5D4', to: '#7C5CFF' },
-  badge: null,
-};
-
 const AUTHORS = {
   pix: {
     id: 'u-pix',

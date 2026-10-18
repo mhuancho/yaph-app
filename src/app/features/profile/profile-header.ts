@@ -98,13 +98,15 @@ import { CompactPipe } from '../../ui/metric-pipes';
 
         <div class="mt-4 flex flex-wrap justify-center gap-2 md:justify-start">
           @if (profiles.isMe()) {
-            <button
-              type="button"
+            <!-- Editar lleva a la pantalla de identidad: es el mismo
+                 formulario con el que se entró, no una copia. -->
+            <a
+              routerLink="/acceder"
               class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-ink transition-colors duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"
             >
               <app-icon name="edit" class="size-3.5" />
               {{ i18n.t('action.edit.profile') }}
-            </button>
+            </a>
             <button
               type="button"
               class="grid size-9 place-items-center rounded-full border border-white/15 text-ink-muted transition-colors duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"

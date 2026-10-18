@@ -93,3 +93,15 @@ You are an expert in TypeScript, Angular, and scalable web application developme
   procedural del clip con la utilidad `clip-poster`.
 - **«En directo» se deriva de `clip.kind`**, nunca de una bandera del perfil ni
   de la insignia del creador.
+- **La identidad propia sale de `SessionStore.profile()`**, nunca de
+  `CURRENT_PROFILE` directamente: ese mock es solo la base de contadores sobre
+  la que la sesión escribe handle, nombre y avatar. Lo que se publica
+  —comentario, clip, mensaje de chat— lo firma la sesión.
+- **La sesión no autentica y eso se dice en pantalla.** No añadas nada que dé a
+  entender que hay verificación de credenciales.
+- **Las rutas que piden identidad van tras `requireSession`** y el guard
+  devuelve un `UrlTree`, no navega. El feed, Explorar y los perfiles ajenos son
+  públicos a propósito.
+- **La directiva de Signal Forms es `FormField` con selector `[formField]`**
+  (no `[field]`), y los mensajes de error solo se muestran cuando el campo está
+  `touched()`.

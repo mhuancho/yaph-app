@@ -1,8 +1,11 @@
 import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { I18nStore, Locale } from '../../core/i18n/i18n-store';
 import { ModerationStore } from '../../core/state/moderation-store';
+import { SessionStore } from '../../core/state/session-store';
 import { DataSaver, SettingsStore } from '../../core/state/settings-store';
 import { ToastStore } from '../../core/state/toast-store';
+import { AvatarOrb } from '../../ui/avatar-orb';
 import { Icon } from '../../ui/icon';
 
 const DATA_SAVER_OPTIONS = [
@@ -20,7 +23,7 @@ const DATA_SAVER_OPTIONS = [
  */
 @Component({
   selector: 'app-settings-page',
-  imports: [Icon],
+  imports: [Icon, AvatarOrb, RouterLink],
   host: { class: 'block h-full' },
   template: `
     <div class="scrollbar-none h-full overflow-y-auto pt-20 pb-28 md:pt-6 md:pb-8">
@@ -37,6 +40,48 @@ const DATA_SAVER_OPTIONS = [
             {{ i18n.t('settings.ephemeral') }}
           </p>
         }
+
+        <section class="mt-6">
+          <h2 class="metric text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
+            {{ i18n.t('settings.account') }}
+          </h2>
+          <div class="glass mt-2 flex items-center gap-3 rounded-glass border border-white/10 p-4">
+            <app-avatar-orb [creator]="session.profile()" size="md" />
+            <span class="min-w-0 flex-1">
+              @if (session.signedIn()) {
+                <span class="block truncate text-[0.875rem] text-ink">
+                  {{ session.profile().displayName }}
+                </span>
+                <span class="metric block truncate text-[0.75rem] text-ink-muted">
+                  {{ session.profile().handle }}
+                </span>
+              } @else {
+                <span class="block text-[0.875rem] text-ink">
+                  {{ i18n.t('settings.account.anonymous') }}
+                </span>
+                <span class="block text-[0.75rem] text-ink-muted">
+                  {{ i18n.t('settings.account.hint') }}
+                </span>
+              }
+            </span>
+            @if (session.signedIn()) {
+              <button
+                type="button"
+                class="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-[0.6875rem] font-semibold text-ink-muted transition-colors hover:border-neon-magenta/50 hover:text-ink"
+                (click)="signOut()"
+              >
+                {{ i18n.t('action.signout') }}
+              </button>
+            } @else {
+              <a
+                routerLink="/acceder"
+                class="shrink-0 rounded-full bg-neon-cyan px-3.5 py-1.5 text-[0.6875rem] font-semibold text-abyss shadow-neon-cyan"
+              >
+                {{ i18n.t('action.signin') }}
+              </a>
+            }
+          </div>
+        </section>
 
         <section class="mt-6">
           <h2 class="metric text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
@@ -196,12 +241,25 @@ export class SettingsPage {
   protected readonly settings = inject(SettingsStore);
   protected readonly i18n = inject(I18nStore);
   protected readonly moderation = inject(ModerationStore);
+  protected readonly session = inject(SessionStore);
   private readonly toasts = inject(ToastStore);
+  private readonly router = inject(Router);
 
   protected readonly dataSavers = DATA_SAVER_OPTIONS;
 
   protected onLocale(event: Event): void {
     this.i18n.locale.set((event.target as HTMLSelectElement).value as Locale);
+  }
+
+  /**
+   * Cerrar sesión no borra lo guardado (me gusta, bloqueos, preferencias): son
+   * datos de este navegador, no de la cuenta, y para eso está «Borrar datos
+   * locales» aquí abajo.
+   */
+  protected signOut(): void {
+    this.session.signOut();
+    this.toasts.show('Sesión cerrada', 'ok');
+    void this.router.navigateByUrl('/');
   }
 
   protected unblockAll(): void {

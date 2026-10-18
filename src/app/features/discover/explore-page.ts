@@ -140,7 +140,7 @@ export class ExplorePage {
 
   /** Los creadores sugeridos excluyen el perfil propio. */
   protected readonly creators = computed(() =>
-    this.profiles.profiles().filter((profile) => profile.id !== this.profiles.me.id),
+    this.profiles.profiles().filter((profile) => profile.id !== this.profiles.me().id),
   );
 
   private readonly pool = computed(() => (this.tag() ? clipsForTag(this.tag()!) : ALL_CLIPS));

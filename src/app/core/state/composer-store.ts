@@ -1,10 +1,10 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { ALL_SOUNDS } from '../data/catalog';
-import { CURRENT_PROFILE } from '../data/mock-profiles';
 import { clipSources } from '../data/mock-feed';
 import { AudioTrack, VideoClip } from '../models/feed';
 import { FeedStore } from './feed-store';
 import { PersistentState } from './persistent-state';
+import { SessionStore } from './session-store';
 import { ToastStore } from './toast-store';
 
 /** Clips de muestra que hacen las veces de «galería» del dispositivo. */
@@ -36,6 +36,7 @@ export class ComposerStore {
   private readonly feed = inject(FeedStore);
   private readonly toasts = inject(ToastStore);
   private readonly store = inject(PersistentState);
+  private readonly session = inject(SessionStore);
 
   readonly footage = signal<(typeof SAMPLE_FOOTAGE)[number]>(SAMPLE_FOOTAGE[0]);
   readonly description = signal('');
@@ -86,13 +87,13 @@ export class ComposerStore {
       id: `mine-${this.sequence}`,
       kind: 'short',
       liveViewers: null,
-      creator: CURRENT_PROFILE,
+      creator: this.session.profile(),
       description: this.description().trim().slice(0, DESCRIPTION_MAX_LENGTH),
       hashtags: this.hashtags(),
       audio: sound ?? {
         id: `a-mine-${this.sequence}`,
         title: 'Sonido original',
-        author: CURRENT_PROFILE.displayName,
+        author: this.session.profile().displayName,
         uses: 1,
         envelope: Array.from({ length: 32 }, (_, i) => 0.3 + ((i * 7) % 10) / 14),
       },

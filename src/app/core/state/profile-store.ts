@@ -1,8 +1,9 @@
 import { computed, inject, Service, signal } from '@angular/core';
-import { CURRENT_PROFILE, MOCK_LIBRARY, MOCK_PROFILES } from '../data/mock-profiles';
+import { MOCK_LIBRARY, MOCK_PROFILES } from '../data/mock-profiles';
 import { CreatorProfile, FeedCollection, VideoClip } from '../models/feed';
 import { ComposerStore } from './composer-store';
 import { FeedStore } from './feed-store';
+import { SessionStore } from './session-store';
 
 const EMPTY: readonly VideoClip[] = [];
 
@@ -17,15 +18,22 @@ const EMPTY: readonly VideoClip[] = [];
 export class ProfileStore {
   private readonly feed = inject(FeedStore);
   private readonly composer = inject(ComposerStore);
+  private readonly session = inject(SessionStore);
 
   readonly profiles = signal<readonly CreatorProfile[]>(MOCK_PROFILES);
-  readonly me = CURRENT_PROFILE;
+
+  /**
+   * Perfil propio. Lo decide la sesión, no un mock: el handle y el nombre son
+   * los que esa persona eligió al entrar, y cambiarlos en Editar perfil tiene
+   * que verse aquí sin tocar nada más.
+   */
+  readonly me = this.session.profile;
 
   /** Handle del perfil abierto; `null` significa el perfil propio. */
   readonly openHandle = signal<string | null>(null);
 
   readonly profile = computed(() => this.byHandle(this.openHandle()));
-  readonly isMe = computed(() => this.profile()?.id === this.me.id);
+  readonly isMe = computed(() => this.profile()?.id === this.me().id);
 
   /**
    * Publicaciones del perfil abierto. Lo creado en esta sesión encabeza el
@@ -57,7 +65,7 @@ export class ProfileStore {
    * usuario puede escribirlo de cualquier forma.
    */
   byHandle(handle: string | null): CreatorProfile | null {
-    if (!handle) return this.me;
+    if (!handle) return this.me();
 
     const needle = normalize(handle);
     return this.profiles().find((profile) => normalize(profile.handle) === needle) ?? null;

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { requireSession } from './core/auth/session-guard';
 
 /**
  * Rutas con `loadComponent`: el feed es la única vista que entra en el bundle
@@ -7,6 +8,10 @@ import { Routes } from '@angular/router';
  *
  * Los params y query params se enlazan a los `input()` de cada página
  * gracias a `withComponentInputBinding()` en `app.config.ts`.
+ *
+ * `requireSession` cubre lo que no tiene sentido sin identidad: publicar,
+ * la bandeja y el perfil propio. Ver también Explorar, que es público a
+ * propósito: un feed de video se mira antes de entrar.
  */
 export const routes: Routes = [
   {
@@ -35,18 +40,26 @@ export const routes: Routes = [
     loadComponent: () => import('./features/discover/explore-page').then((m) => m.ExplorePage),
   },
   {
+    path: 'acceder',
+    title: 'YAPH — Entrar',
+    loadComponent: () => import('./features/auth/identity-page').then((m) => m.IdentityPage),
+  },
+  {
     path: 'crear',
     title: 'YAPH — Crear',
+    canActivate: [requireSession],
     loadComponent: () => import('./features/create/create-page').then((m) => m.CreatePage),
   },
   {
     path: 'mensajes',
     title: 'YAPH — Mensajes',
+    canActivate: [requireSession],
     loadComponent: () => import('./features/messages/messages-page').then((m) => m.MessagesPage),
   },
   {
     path: 'perfil',
     title: 'YAPH — Mi perfil',
+    canActivate: [requireSession],
     loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
   },
   {

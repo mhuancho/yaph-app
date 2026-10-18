@@ -48,12 +48,19 @@ npm ci
 npm start          # http://localhost:4200
 ```
 
-| Comando          | Qué hace                              |
-| ---------------- | ------------------------------------- |
-| `npm start`      | Servidor de desarrollo                |
-| `npm run build`  | Build de producción (`dist/yaph-app`) |
-| `npm test`       | Vitest + jsdom                        |
-| `npm run format` | Prettier sobre todo el repositorio    |
+| Comando                | Qué hace                                 |
+| ---------------------- | ---------------------------------------- |
+| `npm start`            | Servidor de desarrollo                   |
+| `npm run build`        | Build de producción (`dist/yaph-app`)    |
+| `npm test`             | Vitest + jsdom (161 pruebas)             |
+| `npm run format`       | Prettier sobre todo el repositorio       |
+| `npm run format:check` | Lo que comprueba CI antes de las pruebas |
+
+El build prerenderiza las 87 rutas públicas y deja `dist/yaph-app/browser`
+listo para cualquier host estático; no hace falta un proceso Node. Las rutas
+que dependen de quién mira no se prerenderizan, así que el host necesita el
+fallback habitual de una SPA: servir `index.csr.html` cuando la ruta no
+corresponda a un archivo.
 
 ---
 
@@ -69,31 +76,49 @@ src/app/
 │   ├── state/
 │   │   ├── feed-store.ts         Colección en reproducción, clip activo, likes,
 │   │   │                         guardados y ventana de montaje
+│   │   ├── session-store.ts      Identidad local: quién firma lo que se publica
 │   │   ├── profile-store.ts      Perfil abierto, biblioteca y estado en directo
 │   │   ├── comments-store.ts     Hilo del clip, publicación y panel abierto
 │   │   ├── trends-store.ts       Tendencias y stream simulado de directos
+│   │   ├── search-store.ts       Consulta, filtros e historial de búsqueda
+│   │   ├── messages-store.ts     Bandeja, hilo abierto y envío
+│   │   ├── composer-store.ts     Borrador de publicación y clips propios
+│   │   ├── moderation-store.ts   Bloqueos, ocultos y denuncias
+│   │   ├── notifications-store.ts  Bandeja de actividad y no leídos
+│   │   ├── settings-store.ts     Preferencias (autoplay, audio, datos, HUD)
+│   │   ├── persistent-state.ts   localStorage con escritura síncrona
 │   │   ├── playback-telemetry-store.ts   Telemetría real del <video> activo
+│   │   ├── clip-actions-store.ts, share-service.ts, toast-store.ts
 │   │   ├── reduced-motion.ts     prefers-reduced-motion como signal
 │   │   └── viewport.ts           Si la ventana tiene columna derecha
-│   ├── directives/in-view.ts     IntersectionObserver → clip activo
+│   ├── auth/session-guard.ts     Puerta de las rutas que piden identidad
+│   ├── i18n/                     Diccionario ES/EN y store de idioma
+│   ├── directives/               in-view (IntersectionObserver), clip-gestures
 │   └── util/                     format, noise (PRNG con semilla), media
 ├── ui/                           Icon, AvatarOrb, HoloBadge, Soundwave, HudCard,
-│                                 Sparkline, EmojiPicker, pipes de métricas
+│                                 Sparkline, EmojiPicker, ToastHost, pipes
 ├── layout/                       AppShell, NavDock, MobileTabBar, MobileTopBar
 └── features/
     ├── feed/                     FeedPage, VideoStage, ClipOverlay, InteractionRail
     ├── comments/                 CommentsThread (pestañas + composer), CommentRow,
     │                             LiveChatList y CommentsSheet
-    ├── profile/                  ProfilePage, ProfileHeader, ClipGrid y ClipTile
-    ├── trends/                   HudPanel + tarjetas de telemetría/tendencias/
-    │                             creadores/comentarios de directo
-    └── stub/                     Placeholder de las rutas aún no implementadas
+    ├── profile/                  ProfilePage, ProfileHeader, ClipGrid, ClipTile
+    │                             y el panel de analíticas del creador
+    ├── discover/                 SearchPage, ExplorePage, TagPage y SoundPage
+    ├── messages/                 MessagesPage: bandeja e hilo
+    ├── create/                   CreatePage: publicar un clip
+    ├── auth/                     IdentityPage: entrar y editar el perfil
+    ├── settings/                 SettingsPage: preferencias y cuenta
+    └── trends/                   HudPanel + tarjetas de telemetría/tendencias/
+                                  creadores/comentarios de directo
 ```
 
-Rutas: `/` (feed, en el bundle inicial) y `/explorar`, `/crear`, `/mensajes`,
-`/perfil`, `/perfil/:handle` por `loadComponent`. El handle viaja con la arroba
-(`/perfil/@nyx.render`), como la URL que la gente copia y pega. Build de producción: **~85 kB transferidos** en
-el arranque.
+Rutas: `/` (feed, en el bundle inicial) y `/explorar`, `/buscar`, `/tag/:tag`,
+`/sonido/:soundId`, `/acceder`, `/crear`, `/mensajes`, `/perfil`,
+`/perfil/:handle`, `/ajustes` por `loadComponent`. El handle viaja con la
+arroba (`/perfil/@nyx.render`), como la URL que la gente copia y pega. Publicar,
+la bandeja y el perfil propio van tras `requireSession`. Build de producción:
+**~85 kB transferidos** en el arranque.
 
 ---
 
@@ -235,6 +260,48 @@ audio sin gesto previo, y un `play()` rechazado deja el feed congelado en el
 primer clip. El rechazo se captura y se distingue `AbortError` (normal al pasar
 de clip rápido) de `NotAllowedError` (política de autoplay).
 
+**La sesión es local y lo dice en pantalla.** No hay servidor que verifique
+nada: la identidad se escribe en un formulario y vive en `localStorage`.
+Fingir una autenticación sin decirlo sería peor que no tenerla, así que la
+pantalla lo avisa y el store lo documenta. Lo que sí resuelve es lo que la
+interfaz necesita saber: si hay alguien dentro, quién firma lo que se publica
+—comentarios, clips, mensajes del chat— y qué rutas no tienen sentido sin
+identidad. Con backend, `signIn` pasa a ser la llamada que devuelve un token y
+`SessionStore.profile` el perfil que responda el servidor, sin tocar la UI. Los
+handles del catálogo quedan reservados: además de la suplantación obvia, dos
+perfiles con el mismo handle dejarían uno inalcanzable por URL.
+
+**Una sola pantalla para entrar y para editar el perfil.** Es el mismo
+formulario sobre el mismo estado; separarlos en dos rutas duplicaría la
+validación para cambiar un título. Es también el único formulario de la app con
+Signal Forms: tiene esquema, validación cruzada con el catálogo y un botón que
+depende del estado del formulario, que es exactamente lo que `@angular/forms/signals`
+resuelve mejor que un par de signals a mano.
+
+**El guard devuelve un `UrlTree`, no navega.** Así la navegación bloqueada se
+reemplaza en vez de encadenarse, y el botón «atrás» no vuelve a una ruta que el
+guard va a rechazar otra vez. El destino viaja en `volver` para seguir a donde
+se iba, y solo se acepta si empieza por `/` y no por `//`: una URL de la
+aplicación, nunca otro host.
+
+**Se prerenderizan las rutas públicas, no todas.** El feed, los perfiles
+ajenos, los hashtags y los sonidos son iguales para todo el mundo y es lo que
+indexa un buscador: 87 rutas estáticas. Lo que depende de quién mira se
+renderiza en cliente, porque hacerlo en servidor sin sesión produce HTML que la
+hidratación descarta. Dos fallos que solo aparecen prerenderizando: el efecto de
+reproducción llamaba a `pause()` sobre un `<video>` del servidor que no es un
+elemento de medios real, y el `src` lo elegía el servidor, que no sabe qué
+códec soporta el cliente —el navegador empezaba a descargar el MP4 antes de
+hidratar y, sin H.264, el `error` previo llegaba al componente por replay de
+eventos—. Ahora la fuente se escribe en el navegador y el fallo pertenece a la
+fuente, no al componente, así que una fuente nueva reintenta.
+
+**El idioma se cambia sin recargar.** `@angular/localize` compila un paquete
+por idioma; aquí el diccionario es un dato y se consume con `i18n.t('clave')` en
+la plantilla, no con un pipe: uno puro no se recalcularía al cambiar de idioma y
+uno impuro correría en cada ciclo de detección. Se traduce solo el _chrome_; lo
+que escribe la gente se queda en su idioma.
+
 **Doble contenedor por clip.** Cada clip se publica en MP4 (H.264/AAC) y WebM
 (VP9/Opus), y `pickPlayableSource` elige con `canPlayType` declarando los
 `codecs=`. Sin esto, los builds de Chromium sin códecs propietarios — y algunas
@@ -311,13 +378,19 @@ responden `403` desde hace tiempo. Para regenerarlos:
 - **El selector de emojis es una lista curada de 40, no el catálogo Unicode.**
   Uno exhaustivo necesita índice de búsqueda, datos de tonos de piel y carga
   diferida; en un composer de comentarios casi nadie baja del primer grupo.
-- **La caja de escritura usa un signal, no Signal Forms.** Es un campo de
-  texto libre con un límite de longitud: sin esquema, campos cruzados ni
-  envío asíncrono, `@angular/forms/signals` no aportaría nada. Cuando el
-  composer gane menciones, respuestas y adjuntos, ahí sí toca migrarlo.
-- **Sin SSR.** Para un feed público de video el SEO importa, pero `@angular/ssr`
-  obligaría a guardar todos los accesos a `IntersectionObserver`,
-  `HTMLVideoElement` y `matchMedia`. Es la siguiente pieza natural, no un olvido.
+- **La caja de escritura de comentarios usa un signal, no Signal Forms.** Es un
+  campo de texto libre con un límite de longitud: sin esquema, campos cruzados
+  ni envío asíncrono, `@angular/forms/signals` no aportaría nada, y donde sí
+  aporta —la pantalla de identidad— ahí está. Cuando el composer gane
+  menciones, respuestas y adjuntos, toca migrarlo.
+- **La sesión no autentica.** Sin contraseña, sin servidor y sin token: la
+  identidad vive en `localStorage` y cualquiera puede cambiarla desde la
+  consola. Está señalado en la propia pantalla porque una demo que finge una
+  sesión sin decirlo engaña a quien la evalúa.
+- **El perfil propio mezcla identidad real y contenido de demostración.** El
+  handle, el nombre y el avatar salen de la sesión; los contadores y la
+  parrilla siguen siendo datos de ejemplo, que no tienen de dónde salir hasta
+  que haya backend.
 - **Un solo nivel de calidad por clip.** Un feed real necesita HLS/DASH con
   varias representaciones; eso vive en una capa de reproductor, no en este
   componente.

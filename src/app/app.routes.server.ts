@@ -10,11 +10,13 @@ import { MOCK_PROFILES } from './core/data/mock-profiles';
  * - **Prerender** el feed y todo lo que indexa un buscador —perfiles ajenos,
  *   hashtags, sonidos—, que es justo lo que un feed público de video necesita
  *   del SSR.
- * - **Cliente** lo que depende de quién mira (perfil propio, bandeja, crear,
- *   ajustes) o de parámetros de consulta (la búsqueda). Renderizarlo en
- *   servidor sin sesión produciría HTML que se descarta en la hidratación.
+ * - **Cliente** lo que depende de quién mira (identidad, perfil propio,
+ *   bandeja, crear, ajustes) o de parámetros de consulta (la búsqueda).
+ *   Renderizarlo en servidor sin sesión produciría HTML que se descarta en la
+ *   hidratación, y las tres primeras están además tras el guard de sesión.
  */
 export const serverRoutes: ServerRoute[] = [
+  { path: 'acceder', renderMode: RenderMode.Client },
   { path: 'buscar', renderMode: RenderMode.Client },
   { path: 'crear', renderMode: RenderMode.Client },
   { path: 'mensajes', renderMode: RenderMode.Client },
