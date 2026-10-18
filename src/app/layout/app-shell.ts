@@ -6,6 +6,8 @@ import { HudPanel } from '../features/trends/hud-panel';
 import { CommentsStore } from '../core/state/comments-store';
 import { FeedStore } from '../core/state/feed-store';
 import { Viewport } from '../core/state/viewport';
+import { ClipActionsStore } from '../core/state/clip-actions-store';
+import { ClipActionsSheet } from '../features/feed/clip-actions-sheet';
 import { ToastHost } from '../ui/toast-host';
 import { MobileTabBar } from './mobile-tab-bar';
 import { MobileTopBar } from './mobile-top-bar';
@@ -39,6 +41,7 @@ import { NavDock } from './nav-dock';
     CommentsThread,
     CommentsSheet,
     ToastHost,
+    ClipActionsSheet,
   ],
   host: { class: 'block h-dvh overflow-hidden' },
   template: `
@@ -75,6 +78,10 @@ import { NavDock } from './nav-dock';
     <app-mobile-tab-bar />
     <app-toast-host />
 
+    @if (actions.clip()) {
+      <app-clip-actions-sheet />
+    }
+
     @if (sheetThread(); as clip) {
       <app-comments-sheet [clip]="clip" />
     }
@@ -84,6 +91,7 @@ export class AppShell {
   private readonly feed = inject(FeedStore);
   private readonly comments = inject(CommentsStore);
   private readonly viewport = inject(Viewport);
+  protected readonly actions = inject(ClipActionsStore);
 
   /** Hilo en la columna derecha (sustituye al HUD mientras está abierto). */
   protected readonly sidePanelThread = computed(() =>

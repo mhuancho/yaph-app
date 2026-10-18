@@ -94,3 +94,38 @@ describe('FeedStore', () => {
     expect(store.paused()).toBe(true);
   });
 });
+
+describe('FeedStore — paginación', () => {
+  let store: FeedStore;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    store = TestBed.inject(FeedStore);
+  });
+
+  it('añade clips nuevos sin repetir los que ya estaban', () => {
+    const before = store.total();
+    store.loadMore();
+
+    const ids = store.clips().map((clip) => clip.id);
+    expect(store.total()).toBeGreaterThan(before);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('se agota y deja de crecer', () => {
+    for (let i = 0; i < 40; i++) store.loadMore();
+
+    expect(store.exhausted()).toBe(true);
+    const total = store.total();
+    store.loadMore();
+    expect(store.total()).toBe(total);
+  });
+
+  it('no alarga una colección que no es «Para ti»', () => {
+    const clips = store.clips().slice(0, 2);
+    store.playCollection({ id: 'profile:x', label: '@x', clips });
+
+    store.loadMore();
+    expect(store.total()).toBe(2);
+  });
+});

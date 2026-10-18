@@ -1,4 +1,5 @@
 import { computed, linkedSignal, Service, signal } from '@angular/core';
+import { ALL_CLIPS } from '../data/catalog';
 import { MOCK_CLIPS } from '../data/mock-feed';
 import { FeedCollection, VideoClip } from '../models/feed';
 
@@ -6,6 +7,9 @@ import { FeedCollection, VideoClip } from '../models/feed';
 export const MOUNT_RADIUS = 1;
 
 const FOR_YOU: FeedCollection = { id: 'for-you', label: 'Para ti', clips: MOCK_CLIPS };
+
+/** Cuántos clips entran en cada tanda del scroll infinito. */
+const PAGE_SIZE = 6;
 
 /**
  * Estado del feed: qué clip está activo, qué ha tocado el usuario y qué debe
@@ -112,13 +116,39 @@ export class FeedStore {
     this.activeIndex.set(0);
   }
 
+  /**
+   * Trae la siguiente tanda de «Para ti».
+   *
+   * Solo pagina la recomendación general: las demás colecciones —un perfil, un
+   * hashtag, un sonido— son listas cerradas y alargarlas con clips ajenos
+   * rompería lo que el usuario cree estar recorriendo.
+   */
+  loadMore(): void {
+    if (!this.isForYou() || this.exhausted()) return;
+
+    const seen = new Set(this.clips().map((clip) => clip.id));
+    const next = ALL_CLIPS.filter((clip) => !seen.has(clip.id)).slice(0, PAGE_SIZE);
+
+    if (next.length === 0) {
+      this.exhausted.set(true);
+      return;
+    }
+    this.current.update((collection) => ({
+      ...collection,
+      clips: [...collection.clips, ...next],
+    }));
+  }
+
   /** Vuelve a la recomendación general. */
   resetToForYou(): void {
     if (this.current().id === FOR_YOU.id) return;
     this.playCollection(FOR_YOU);
+    this.exhausted.set(false);
   }
 
   readonly isForYou = computed(() => this.current().id === FOR_YOU.id);
+  /** No quedan más clips que traer. */
+  readonly exhausted = signal(false);
 
   next(): void {
     this.setActiveIndex(this.activeIndex() + 1);

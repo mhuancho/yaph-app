@@ -16,6 +16,9 @@ import { VideoStage } from './video-stage';
  * Teclado: ↑/↓, PageUp/PageDown, Inicio/Fin para navegar, Espacio para
  * pausar y «M» para el audio. Sin esto el feed solo existiría para el ratón.
  */
+/** Clips que deben quedar por delante antes de pedir más. */
+const PRELOAD_MARGIN = 3;
+
 @Component({
   selector: 'app-feed-page',
   imports: [VideoStage, InView, Icon],
@@ -88,7 +91,12 @@ export class FeedPage {
   }
 
   protected onInView(index: number, visible: boolean): void {
-    if (visible) this.feed.setActiveIndex(index);
+    if (!visible) return;
+
+    this.feed.setActiveIndex(index);
+    // Se pide la siguiente tanda con margen: pedirla al llegar al último clip
+    // dejaría el feed en blanco mientras carga.
+    if (index >= this.feed.total() - PRELOAD_MARGIN) this.feed.loadMore();
   }
 
   protected step(delta: number, event: Event): void {

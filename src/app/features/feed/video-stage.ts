@@ -8,12 +8,15 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { EMPTY_TELEMETRY, PlaybackState, VideoClip } from '../../core/models/feed';
 import { FeedStore } from '../../core/state/feed-store';
 import { pickPlayableSource } from '../../core/util/media';
 import { PlaybackTelemetryStore } from '../../core/state/playback-telemetry-store';
 import { Icon } from '../../ui/icon';
 import { ClockPipe } from '../../ui/metric-pipes';
+import { ClipGestures, TapPoint } from '../../core/directives/clip-gestures';
+import { ClipActionsStore } from '../../core/state/clip-actions-store';
 import { ClipOverlay } from './clip-overlay';
 import { InteractionRail } from './interaction-rail';
 
@@ -40,7 +43,7 @@ import { InteractionRail } from './interaction-rail';
  */
 @Component({
   selector: 'app-video-stage',
-  imports: [ClipOverlay, InteractionRail, Icon, ClockPipe],
+  imports: [ClipOverlay, InteractionRail, Icon, ClockPipe, ClipGestures],
   host: {
     class: 'relative block h-full w-full snap-start snap-always',
     role: 'article',
@@ -96,6 +99,60 @@ import { InteractionRail } from './interaction-rail';
       opacity: 0.45;
     }
 
+    /* Corazón del doble toque: sube y se desvanece desde el punto tocado. */
+    .heart-burst {
+      translate: -50% -50%;
+      animation: heart-pop 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes heart-pop {
+      0% {
+        opacity: 0;
+        scale: 0.4;
+      }
+      30% {
+        opacity: 1;
+        scale: 1.15;
+      }
+      100% {
+        opacity: 0;
+        scale: 1;
+        translate: -50% -140%;
+      }
+    }
+
+    /* El control de posición es invisible salvo el pulgar, que aparece al
+     * apuntarlo: la barra pintada debajo es la que comunica el progreso. */
+    .scrub::-webkit-slider-thumb {
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 9999px;
+      background: var(--color-neon-cyan);
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+
+    .scrub::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border: 0;
+      border-radius: 9999px;
+      background: var(--color-neon-cyan);
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+
+    .scrub:hover::-webkit-slider-thumb,
+    .scrub:focus-visible::-webkit-slider-thumb {
+      opacity: 1;
+    }
+
+    .scrub:hover::-moz-range-thumb,
+    .scrub:focus-visible::-moz-range-thumb {
+      opacity: 1;
+    }
+
     .scrim {
       background: linear-gradient(
         to top,
@@ -117,6 +174,7 @@ import { InteractionRail } from './interaction-rail';
         ></div>
 
         <div
+          #frame
           class="relative z-10 h-full w-full overflow-hidden bg-carbon md:rounded-stage md:border md:border-white/10"
         >
           <div class="poster clip-poster absolute inset-0"></div>
@@ -149,9 +207,15 @@ import { InteractionRail } from './interaction-rail';
                que exige WCAG 2.2.2 para contenido que arranca solo. -->
           <button
             type="button"
-            class="absolute inset-0 z-10 cursor-default"
+            class="absolute inset-0 z-10 cursor-default touch-pan-y"
+            appClipGestures
             [attr.aria-label]="isPlaying() ? 'Pausar clip' : 'Reproducir clip'"
-            (click)="feed.togglePlayback()"
+            (tap)="feed.togglePlayback()"
+            (doubleTap)="onDoubleTap($event)"
+            (longPress)="actions.open(clip())"
+            (swipeLeft)="openProfile()"
+            (keydown.enter)="feed.togglePlayback()"
+            (keydown.space)="onSpace($event)"
           >
             @if (active() && !isPlaying()) {
               <span
@@ -161,6 +225,20 @@ import { InteractionRail } from './interaction-rail';
               </span>
             }
           </button>
+
+          <!-- Corazones del doble toque. Se autodestruyen al acabar la
+               animación: dejarlos en el DOM acumularía capas invisibles. -->
+          @for (burst of bursts(); track burst.id) {
+            <span
+              aria-hidden="true"
+              class="heart-burst pointer-events-none absolute z-20 text-neon-magenta"
+              [style.left.px]="burst.x"
+              [style.top.px]="burst.y"
+              (animationend)="dropBurst(burst.id)"
+            >
+              <app-icon name="heart" class="size-16" [filled]="true" [strokeWidth]="0" />
+            </span>
+          }
 
           @if (failed()) {
             <p
@@ -180,11 +258,31 @@ import { InteractionRail } from './interaction-rail';
 
           <!-- Progreso: scaleX en vez de width para que el navegador lo
                resuelva en el compositor y no haga layout 4 veces por segundo. -->
-          <div class="absolute inset-x-0 bottom-[var(--bottom-inset)] z-30 h-[3px] bg-white/10">
-            <div
-              class="h-full origin-left bg-[linear-gradient(90deg,var(--glow-from),var(--glow-to))]"
-              [style.transform]="'scaleX(' + progress() + ')'"
-            ></div>
+          <div class="absolute inset-x-0 bottom-[var(--bottom-inset)] z-30">
+            <div class="relative h-[3px] bg-white/10">
+              <div
+                class="h-full origin-left bg-[linear-gradient(90deg,var(--glow-from),var(--glow-to))]"
+                [style.transform]="'scaleX(' + progress() + ')'"
+              ></div>
+
+              <!-- Un range nativo: trae arrastre, teclado y semántica ARIA sin
+                   reimplementar nada. Es transparente y se superpone a la
+                   barra pintada, que es la que se ve. -->
+              @if (active()) {
+                <input
+                  type="range"
+                  class="scrub absolute inset-x-0 -top-2 h-6 w-full cursor-pointer appearance-none bg-transparent"
+                  min="0"
+                  step="0.05"
+                  [max]="clip().durationSeconds"
+                  [value]="telemetry.currentTime()"
+                  [attr.aria-label]="'Posición del clip'"
+                  [attr.aria-valuetext]="positionLabel()"
+                  (input)="seek($event)"
+                  (pointerdown)="$event.stopPropagation()"
+                />
+              }
+            </div>
           </div>
 
           @if (active()) {
@@ -216,11 +314,16 @@ export class VideoStage {
 
   protected readonly feed = inject(FeedStore);
   protected readonly telemetry = inject(PlaybackTelemetryStore);
+  protected readonly actions = inject(ClipActionsStore);
+  private readonly router = inject(Router);
 
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
+  private readonly frameRef = viewChild<ElementRef<HTMLElement>>('frame');
 
   protected readonly isPlaying = signal(false);
   protected readonly failed = signal(false);
+  protected readonly bursts = signal<readonly { id: number; x: number; y: number }[]>([]);
+  private burstSequence = 0;
 
   protected readonly primarySource = computed(() => pickPlayableSource(this.clip().sources));
 
@@ -229,6 +332,10 @@ export class VideoStage {
   );
 
   protected readonly progress = computed(() => (this.active() ? this.telemetry.progress() : 0));
+
+  protected readonly positionLabel = computed(
+    () => `${Math.round(this.telemetry.currentTime())} de ${this.clip().durationSeconds} segundos`,
+  );
 
   private readonly shouldPlay = computed(
     () => this.active() && !this.feed.paused() && !this.failed(),
@@ -260,6 +367,50 @@ export class VideoStage {
       // Refresca el HUD al cambiar de clip sin esperar al primer `timeupdate`.
       this.probe();
     });
+  }
+
+  /**
+   * Doble toque: me gusta y corazón en el punto tocado. Nunca lo quita, igual
+   * que en cualquier feed vertical: quitar un me gusta sin querer por un toque
+   * de más sería peor que no hacer nada.
+   */
+  protected onDoubleTap(point: TapPoint): void {
+    const clip = this.clip();
+    if (!this.feed.isLiked(clip.id)) this.feed.toggleLike(clip.id);
+
+    const host = this.frameRef()?.nativeElement;
+    if (!host) return;
+
+    const box = host.getBoundingClientRect();
+    this.burstSequence += 1;
+    this.bursts.update((list) => [
+      ...list,
+      { id: this.burstSequence, x: point.x - box.left, y: point.y - box.top },
+    ]);
+  }
+
+  protected dropBurst(id: number): void {
+    this.bursts.update((list) => list.filter((burst) => burst.id !== id));
+  }
+
+  /** Deslizar a la izquierda abre el perfil, como en cualquier feed vertical. */
+  protected openProfile(): void {
+    void this.router.navigate(['/perfil', this.clip().creator.handle]);
+  }
+
+  /** El botón es nativo, pero sin `(click)` hay que cubrir la barra espaciadora. */
+  protected onSpace(event: Event): void {
+    event.preventDefault();
+    this.feed.togglePlayback();
+  }
+
+  protected seek(event: Event): void {
+    const video = this.videoRef()?.nativeElement;
+    if (!video) return;
+
+    const seconds = Number((event.target as HTMLInputElement).value);
+    video.currentTime = seconds;
+    this.probe();
   }
 
   protected onPlaying(): void {
