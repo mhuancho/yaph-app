@@ -222,6 +222,38 @@ describe('Hilo de comentarios', () => {
     });
   });
 
+  describe('caja de escritura', () => {
+    it('anuncia los caracteres restantes solo cerca del límite', async () => {
+      const { fixture, host } = await render();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const composer = host.querySelector<HTMLTextAreaElement>('textarea')!;
+      expect(composer.getAttribute('enterkeyhint')).toBe('send');
+      expect(composer.getAttribute('aria-describedby')).toBeNull();
+
+      composer.value = 'x'.repeat(125);
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      await fixture.whenStable();
+
+      const counterId = composer.getAttribute('aria-describedby');
+      expect(counterId).toBeTruthy();
+      // El contador existe de verdad y dice lo que queda.
+      expect(host.querySelector(`#${counterId}`)?.textContent).toContain('25 caracteres');
+    });
+
+    it('mantiene el selector de emoji dentro del campo', async () => {
+      const { fixture, host } = await render();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const field = host.querySelector('textarea')!.closest('div')!;
+      expect(field.querySelector('button[aria-label="Insertar emoji"]')).toBeTruthy();
+    });
+  });
+
   describe('directos', () => {
     it('ofrece dos pestañas y arranca en el chat', async () => {
       const { fixture, host } = await render();

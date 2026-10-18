@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  afterRenderEffect,
   Component,
   computed,
   effect,
@@ -24,6 +25,9 @@ type Tab = 'live' | 'thread';
 
 /** A partir de aquí se muestra cuántos caracteres quedan. */
 const WARN_REMAINING = 30;
+
+/** Alto máximo del campo antes de que empiece a desplazarse (≈5 líneas). */
+const COMPOSER_MAX_PX = 112;
 
 /** Ids únicos por instancia para enlazar pestañas y paneles con ARIA. */
 let instances = 0;
@@ -166,48 +170,60 @@ let instances = 0;
         </p>
       }
 
-      <form class="flex items-end gap-2 px-4 py-3" (submit)="submit($event)">
-        <app-avatar-orb class="mb-1" [creator]="currentUser" size="sm" />
+      <form class="px-4 py-3" (submit)="submit($event)">
+        <div class="flex items-end gap-2.5">
+          <app-avatar-orb class="mb-1" [creator]="currentUser" size="sm" />
 
-        <label class="min-w-0 flex-1">
-          <span class="sr-only">{{ composerLabel() }}</span>
-          <textarea
-            #composer
-            rows="1"
-            [attr.maxlength]="maxLength"
-            [attr.placeholder]="placeholder()"
-            class="glass-flat max-h-24 w-full resize-none rounded-2xl border border-white/12 px-3.5 py-2.5 text-[0.8125rem] text-ink placeholder:text-ink-faint focus:border-neon-cyan/50 focus:outline-none"
-            [value]="draft()"
-            (input)="onInput($event)"
-            (keydown.enter)="submit($event)"
-          ></textarea>
-        </label>
+          <!-- El campo ocupa toda la fila y el selector de emoji va dentro:
+               repartido en columnas, el placeholder no cabía en una línea y se
+               recortaba contra la altura de una sola fila. -->
+          <div class="relative min-w-0 flex-1">
+            <label>
+              <span class="sr-only">{{ composerLabel() }}</span>
+              <textarea
+                #composer
+                rows="1"
+                enterkeyhint="send"
+                [attr.maxlength]="maxLength"
+                [attr.placeholder]="placeholder()"
+                [attr.aria-describedby]="remaining() <= warnRemaining ? counterId : null"
+                class="glass-flat scrollbar-none block max-h-28 min-h-[2.375rem] w-full resize-none overflow-y-auto rounded-2xl border border-white/12 py-2.5 pr-11 pl-3.5 text-[0.8125rem] leading-snug text-ink placeholder:text-ink-faint focus:border-neon-cyan/50 focus:outline-none"
+                [value]="draft()"
+                (input)="onInput($event)"
+                (keydown.enter)="submit($event)"
+              ></textarea>
+            </label>
 
-        <app-emoji-picker class="mb-0.5" (pick)="insertEmoji($event)" />
+            <!-- El envoltorio lleva la posición: el host del selector ya es
+                 relative para anclar su panel, y dos utilidades de position en
+                 el mismo elemento se resuelven por orden de la cascada. -->
+            <div class="absolute right-1.5 bottom-1.5">
+              <app-emoji-picker (pick)="insertEmoji($event)" />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="mb-0.5 grid size-10 shrink-0 place-items-center rounded-full transition-[background-color,color,box-shadow,opacity] duration-200 disabled:cursor-not-allowed disabled:opacity-40"
+            [class]="submitClass()"
+            [disabled]="!canSubmit()"
+            [attr.aria-label]="submitLabel()"
+          >
+            <app-icon name="send" class="size-[1.15rem]" [strokeWidth]="1.8" />
+          </button>
+        </div>
 
         @if (remaining() <= warnRemaining) {
-          <span
-            class="metric mb-3 shrink-0 text-[0.625rem]"
+          <p
+            [id]="counterId"
+            class="metric mt-1.5 pr-12 text-right text-[0.625rem]"
             [class.text-neon-magenta]="remaining() <= 0"
             [class.text-ink-faint]="remaining() > 0"
             aria-live="polite"
           >
-            {{ remaining() }}
-          </span>
+            {{ remaining() }} caracteres
+          </p>
         }
-
-        <button
-          type="submit"
-          class="mb-0.5 grid size-10 shrink-0 place-items-center rounded-full transition-[background-color,color,box-shadow,opacity] duration-200 disabled:cursor-not-allowed disabled:opacity-40"
-          [class.bg-neon-cyan]="canSubmit()"
-          [class.text-abyss]="canSubmit()"
-          [class.shadow-neon-cyan]="canSubmit()"
-          [class.text-ink-faint]="!canSubmit()"
-          [disabled]="!canSubmit()"
-          [attr.aria-label]="submitLabel()"
-        >
-          <app-icon name="send" class="size-[1.15rem]" [strokeWidth]="1.8" />
-        </button>
       </form>
     </div>
   `,
@@ -227,6 +243,7 @@ export class CommentsThread {
   protected readonly maxLength = COMMENT_MAX_LENGTH;
   protected readonly warnRemaining = WARN_REMAINING;
   protected readonly uid = `-${(instances += 1)}`;
+  protected readonly counterId = `composer-count${this.uid}`;
   protected readonly tabs = [
     { id: 'live', label: 'En directo' },
     { id: 'thread', label: 'Comentarios' },
@@ -277,6 +294,17 @@ export class CommentsThread {
       if (this.autoFocus()) this.composerRef().nativeElement.focus();
     });
 
+    // El campo crece con el texto. `afterRenderEffect` y no `effect` porque
+    // hay que medir el DOM ya actualizado con el nuevo valor.
+    //
+    // No se usa `field-sizing: content`, que haría esto en CSS puro, porque
+    // todavía no está en todos los motores; en cuanto lo esté, este bloque se
+    // sustituye por una línea de estilos.
+    afterRenderEffect(() => {
+      this.draft();
+      this.autosize();
+    });
+
     // El chat solo corre mientras su pestaña está a la vista. `TrendsStore`
     // lleva recuento de suscriptores, así que convivir con la tarjeta del HUD
     // no duplica el temporizador.
@@ -303,6 +331,14 @@ export class CommentsThread {
     return this.replies(comment).length;
   }
 
+  /**
+   * Clases completas por rama: `bg-neon-cyan` y compañía se alternan juntas y
+   * un nombre con barra no se puede escribir como enlace `[class.…]`.
+   */
+  protected readonly submitClass = computed(() =>
+    this.canSubmit() ? 'bg-neon-cyan text-abyss shadow-neon-cyan' : 'text-ink-faint',
+  );
+
   protected tabClass(id: Tab): string {
     return this.tab() === id
       ? 'bg-neon-cyan/15 text-neon-cyan shadow-neon-cyan'
@@ -318,6 +354,25 @@ export class CommentsThread {
 
   protected onInput(event: Event): void {
     this.draft.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  /**
+   * Ajusta el alto al contenido. Leer `scrollHeight` fuerza un cálculo de
+   * layout, pero solo ocurre cuando cambia el texto, no en cada frame.
+   *
+   * En la hoja móvil el primer pase ocurre con el `<dialog>` todavía sin
+   * abrir: el campo no está renderizado, `scrollHeight` vale 0 y fijar ese
+   * valor dejaría la caja aplastada. Se descarta la medida y el `min-h` del
+   * propio campo sostiene la altura hasta que haya algo que medir.
+   */
+  private autosize(): void {
+    const textarea = this.composerRef().nativeElement;
+    textarea.style.height = 'auto';
+
+    const measured = textarea.scrollHeight;
+    if (measured === 0) return;
+
+    textarea.style.height = `${Math.min(measured, COMPOSER_MAX_PX)}px`;
   }
 
   /** Inserta el emoji donde está el cursor, no al final del texto. */

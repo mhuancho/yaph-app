@@ -145,6 +145,18 @@ viendo clips grabados.
 mismo comentario raíz. Un árbol arbitrario obliga a paginar por rama y a
 resolver el sangrado en móvil, y no aporta nada a esta conversación.
 
+**La caja de escritura crece con el texto y ocupa toda la fila.** Repartida en
+columnas junto al avatar y dos botones, en la columna derecha le quedaban unos
+90 px: el placeholder se partía en dos líneas y se recortaba contra la altura
+de una sola fila, y asomaba la barra de desplazamiento nativa. Ahora el campo
+ocupa el ancho disponible, el selector de emoji va dentro y la altura se ajusta
+al contenido hasta unas cinco líneas. El ajuste va en TS (`afterRenderEffect`
+mide el DOM ya actualizado) y no con `field-sizing: content`, que todavía no
+está en todos los motores; cuando lo esté, es una línea de CSS y se borra el
+método. En la hoja móvil el primer pase mide con el `<dialog>` aún sin abrir, y
+ahí `scrollHeight` vale 0: se descarta esa medida y el `min-h` del campo
+sostiene la altura.
+
 **El selector de emojis no usa la Popover API.** Un `popover` vive en la capa
 superior y su colocación junto al disparador depende de CSS Anchor Positioning,
 que todavía no está en todos los motores. Un panel absoluto se coloca igual en

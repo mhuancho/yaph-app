@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, output, signal } from '@angular/core';
+import { Component, computed, ElementRef, inject, output, signal } from '@angular/core';
 import { Icon } from './icon';
 
 interface Emoji {
@@ -109,9 +109,8 @@ const GROUPS: readonly EmojiGroup[] = [
   template: `
     <button
       type="button"
-      class="grid size-9 place-items-center rounded-full border border-white/12 text-ink-muted transition-[color,border-color] duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"
-      [class.border-neon-cyan]="open()"
-      [class.text-neon-cyan]="open()"
+      class="grid size-8 place-items-center rounded-full transition-[color,background-color] duration-200 hover:bg-white/10 hover:text-neon-cyan"
+      [class]="buttonClass()"
       [attr.aria-expanded]="open()"
       aria-label="Insertar emoji"
       (click)="open.set(!open())"
@@ -121,7 +120,7 @@ const GROUPS: readonly EmojiGroup[] = [
 
     @if (open()) {
       <div
-        class="absolute right-0 bottom-11 z-50 w-64 rounded-glass border border-white/12 bg-carbon p-2 shadow-hud"
+        class="absolute right-0 bottom-10 z-50 w-60 rounded-glass border border-white/12 bg-carbon p-2 shadow-hud"
         role="group"
         aria-label="Emojis"
       >
@@ -155,6 +154,14 @@ export class EmojiPicker {
   readonly pick = output<string>();
 
   protected readonly open = signal(false);
+
+  /**
+   * Clases completas por rama: `bg-white/10` lleva barra y no se puede
+   * escribir como enlace `[class.…]`.
+   */
+  protected readonly buttonClass = computed(() =>
+    this.open() ? 'bg-white/10 text-neon-cyan' : 'text-ink-faint',
+  );
   protected readonly groups = GROUPS;
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
