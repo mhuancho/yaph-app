@@ -1,4 +1,11 @@
-import { clamp01, formatClock, formatCompact, formatDelta, formatPercent } from './format';
+import {
+  clamp01,
+  formatAge,
+  formatClock,
+  formatCompact,
+  formatDelta,
+  formatPercent,
+} from './format';
 
 describe('formatCompact', () => {
   it('deja los valores de menos de mil sin sufijo', () => {
@@ -59,5 +66,25 @@ describe('clamp01', () => {
   it('devuelve cero ante valores no finitos', () => {
     expect(clamp01(Number.NaN)).toBe(0);
     expect(clamp01(0.5)).toBe(0.5);
+  });
+});
+
+describe('formatAge', () => {
+  it('trata menos de un minuto como "ahora"', () => {
+    expect(formatAge(0)).toBe('ahora');
+    expect(formatAge(0.4)).toBe('ahora');
+  });
+
+  it('escala a minutos, horas, días y semanas', () => {
+    expect(formatAge(42)).toBe('42 min');
+    expect(formatAge(60)).toBe('1 h');
+    expect(formatAge(1_439)).toBe('23 h');
+    expect(formatAge(1_440)).toBe('1 d');
+    expect(formatAge(10_080)).toBe('1 sem');
+  });
+
+  it('protege de entradas no finitas', () => {
+    expect(formatAge(Number.NaN)).toBe('ahora');
+    expect(formatAge(-10)).toBe('ahora');
   });
 });

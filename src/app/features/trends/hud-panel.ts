@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FeedStore } from '../../core/state/feed-store';
 import { Icon } from '../../ui/icon';
 import { CreatorsCard } from './creators-card';
@@ -18,7 +18,7 @@ import { TrendingCard } from './trending-card';
   imports: [TelemetryCard, TrendingCard, CreatorsCard, LiveCommentsCard, Icon],
   template: `
     <aside
-      class="scrollbar-none flex h-full flex-col gap-4 overflow-y-auto py-5"
+      class="scrollbar-none flex h-full flex-col gap-4 overflow-y-auto"
       aria-label="Tendencias y telemetría"
     >
       <!-- Buscador -->
@@ -37,7 +37,13 @@ import { TrendingCard } from './trending-card';
       <app-telemetry-card />
       <app-trending-card />
       <app-creators-card />
-      <app-live-comments-card />
+
+      <!-- Los comentarios en vivo son del directo, no del clip: solo tienen
+           sentido cuando quien publica está emitiendo. En un video corto la
+           conversación va en el hilo del clip, que abre la barra lateral. -->
+      @if (isLive()) {
+        <app-live-comments-card />
+      }
 
       <!-- Pie: estado de la sesión en tipografía de métrica. -->
       <p
@@ -54,4 +60,10 @@ import { TrendingCard } from './trending-card';
 })
 export class HudPanel {
   protected readonly feed = inject(FeedStore);
+
+  /**
+   * Al desmontarse la tarjeta se para también su temporizador: el stream
+   * simulado no corre mientras se ven clips grabados.
+   */
+  protected readonly isLive = computed(() => this.feed.activeClip()?.creator.badge === 'live');
 }

@@ -1,5 +1,11 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { formatClock, formatCompact, formatDelta, formatPercent } from '../core/util/format';
+import {
+  formatAge,
+  formatClock,
+  formatCompact,
+  formatDelta,
+  formatPercent,
+} from '../core/util/format';
 
 /**
  * Pipes puros para las métricas del HUD. Angular los memoiza por argumento, así
@@ -31,5 +37,12 @@ export class DeltaPipe implements PipeTransform {
 export class PercentRatioPipe implements PipeTransform {
   transform(ratio: number): string {
     return formatPercent(ratio);
+  }
+}
+
+@Pipe({ name: 'age' })
+export class AgePipe implements PipeTransform {
+  transform(minutes: number): string {
+    return formatAge(minutes);
   }
 }

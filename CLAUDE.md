@@ -67,10 +67,18 @@ You are an expert in TypeScript, Angular, and scalable web application developme
   No amplíes la ventana sin medir: cada elemento es un decodificador.
 - **Escribe las clases de Tailwind completas en cada rama**, nunca construidas
   en runtime (`'bg-' + color`): v4 detecta utilidades escaneando el código como
-  texto y una clase compuesta no llega al CSS generado.
+  texto y una clase compuesta no llega al CSS generado. Para alternar varias
+  clases usa un `computed()` que devuelva la cadena completa y enlázalo con
+  `[class]`: un nombre con barra (`border-white/12`) no se puede escribir como
+  `[class.border-white/12]`.
 - **Los valores que cambian muchas veces por segundo se animan con `transform`**
   (`scaleX`), no con `width`/`height`.
 - **Las plantillas inline no pueden contener backticks**, ni siquiera dentro de
   comentarios HTML: cierran el template literal.
 - `@Service()` para los stores; estado con signals, derivado con `computed()`,
   y `linkedSignal()` cuando debe reiniciarse al cambiar una fuente.
+- **Comentarios de clip ≠ comentarios de directo.** El hilo del clip vive en
+  `features/comments` y lo abre el rail; la tarjeta de directo del HUD solo se
+  monta cuando `creator.badge === 'live'`.
+- **Para un diálogo modal usa `<dialog>` + `showModal()`**, no un `div` con
+  foco atrapado a mano.

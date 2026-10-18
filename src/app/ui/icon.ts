@@ -29,7 +29,10 @@ export type IconName =
   | 'activity'
   | 'users'
   | 'hash'
-  | 'bolt';
+  | 'bolt'
+  | 'close'
+  | 'send'
+  | 'pin';
 
 const PATHS: Readonly<Record<IconName, readonly string[]>> = {
   home: ['M3.5 11 12 3.8 20.5 11', 'M6 9.6V20.2h12V9.6', 'M10 20.2v-4.6h4v4.6'],
@@ -73,6 +76,9 @@ const PATHS: Readonly<Record<IconName, readonly string[]>> = {
   ],
   hash: ['M9.4 3.6 7.2 20.4', 'M16.8 3.6 14.6 20.4', 'M4.4 9h15.2', 'M3.8 15h15.2'],
   bolt: ['M13.6 3 6 13.6h4.6L10 21l7.6-10.6H13L13.6 3Z'],
+  close: ['M6.2 6.2l11.6 11.6', 'M17.8 6.2 6.2 17.8'],
+  send: ['M4 11.6 20.4 4l-7.6 16.4-2.6-6.2L4 11.6Z', 'M10.2 14.2 20.4 4'],
+  pin: ['M9.4 3.6h5.2l-.8 5.4 3.2 3.2H7l3.2-3.2-.8-5.4Z', 'M12 11.8v8.6'],
 };
 
 @Component({

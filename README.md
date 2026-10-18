@@ -7,10 +7,17 @@ totalmente basado en signals.
 ![Vista de escritorio](docs/preview-desktop.jpg)
 
 <p align="center">
-  <img src="docs/preview-mobile.jpg" alt="Vista móvil" width="300">
-  &nbsp;&nbsp;
-  <img src="docs/preview-tablet.jpg" alt="Vista intermedia" width="300">
+  <img src="docs/preview-mobile.jpg" alt="Vista móvil" width="260">
+  &nbsp;
+  <img src="docs/preview-tablet.jpg" alt="Vista intermedia" width="260">
+  &nbsp;
+  <img src="docs/preview-comentarios-movil.jpg" alt="Hoja de comentarios en móvil" width="260">
 </p>
+
+El icono de mensaje abre el hilo del clip con su caja de escritura: en la
+columna derecha cuando la hay, como hoja inferior modal cuando no.
+
+![Hilo de comentarios](docs/preview-comentarios.jpg)
 
 ---
 
@@ -39,12 +46,15 @@ npm start          # http://localhost:4200
 src/app/
 ├── core/
 │   ├── models/feed.ts            Modelo de dominio (todo readonly)
-│   ├── data/mock-feed.ts         Datos de demo — el seam hacia el API real
+│   ├── data/                     mock-feed.ts y mock-comments.ts — el seam
+│   │                             hacia el API real
 │   ├── state/
 │   │   ├── feed-store.ts         Clip activo, likes, guardados, ventana de montaje
-│   │   ├── trends-store.ts       Tendencias y stream simulado de comentarios
+│   │   ├── comments-store.ts     Hilo del clip, publicación y panel abierto
+│   │   ├── trends-store.ts       Tendencias y stream simulado de directos
 │   │   ├── playback-telemetry-store.ts   Telemetría real del <video> activo
-│   │   └── reduced-motion.ts     prefers-reduced-motion como signal
+│   │   ├── reduced-motion.ts     prefers-reduced-motion como signal
+│   │   └── viewport.ts           Si la ventana tiene columna derecha
 │   ├── directives/in-view.ts     IntersectionObserver → clip activo
 │   └── util/                     format, noise (PRNG con semilla), media
 ├── ui/                           Icon, AvatarOrb, HoloBadge, Soundwave,
@@ -52,8 +62,9 @@ src/app/
 ├── layout/                       AppShell, NavDock, MobileTabBar, MobileTopBar
 └── features/
     ├── feed/                     FeedPage, VideoStage, ClipOverlay, InteractionRail
+    ├── comments/                 CommentsThread (hilo + composer) y CommentsSheet
     ├── trends/                   HudPanel + tarjetas de telemetría/tendencias/
-    │                             creadores/comentarios
+    │                             creadores/comentarios de directo
     └── stub/                     Placeholder de las rutas aún no implementadas
 ```
 
@@ -108,6 +119,29 @@ sampler con `canvas.drawImage` exige media servido con CORS, cuesta CPU en cada
 frame y deja de funcionar en cuanto el video llega por HLS cifrado. Cada clip
 trae su par de colores en `accent`, resuelto en ingesta.
 
+**Comentarios del clip y comentarios de directo son cosas distintas.** El
+icono de mensaje del rail abre el hilo del clip, con su caja de escritura. La
+tarjeta «Comentarios en vivo» del HUD es del directo y solo se monta cuando
+quien publica está emitiendo (`creator.badge === 'live'`); al desmontarse se
+para también su temporizador, así que no hay trabajo de fondo viendo clips
+grabados.
+
+**El hilo reutiliza la columna derecha en vez de abrir una cuarta.** El marco
+de video está limitado por la altura, así que conmutar el contenido de esa
+columna no cambia ni un píxel del reproductor: abrir comentarios no provoca
+reflujo ni recodificación de capas. Donde no hay columna derecha, el hilo se
+presenta como hoja inferior.
+
+**La hoja móvil es un `<dialog>` nativo con `showModal()`.** El navegador
+aporta el atrapado de foco, el cierre con Escape, el fondo inerte y el
+`::backdrop`; reimplementar eso a mano es la fuente habitual de diálogos
+inaccesibles. El `::backdrop` es color plano, sin `backdrop-filter`, porque
+cubre el video en reproducción.
+
+**La antigüedad de un comentario viaja como minutos, no como fecha.** Así el
+formateo es una función pura, el pipe que la envuelve es puro de verdad y
+ningún test depende de la hora a la que se ejecute.
+
 **El visualizador de audio dibuja una envolvente precalculada.** Un
 `AnalyserNode` por clip obligaría a crear el `AudioContext` tras un gesto del
 usuario y a re-enrutar el audio del `<video>` por el grafo. La animación CSS se
@@ -142,6 +176,12 @@ que mostrar.
   para contenido que arranca solo.
 - `aria-pressed` en los controles con estado (me gusta, guardar, seguir,
   silenciar); `aria-expanded` + `aria-controls` en la descripción colapsable.
+- El botón de comentarios declara `aria-haspopup="dialog"` y `aria-expanded`.
+  El panel de escritorio no es modal, así que devuelve el foco al botón que
+  lo abrió al cerrarse; la hoja móvil lo hace el propio `<dialog>`.
+- La caja de escritura solo recibe el foco al abrir cuando hay teclado
+  físico: en un móvil levantaría el teclado virtual sobre el hilo que se
+  quiere leer.
 - `prefers-reduced-motion` desactiva las animaciones decorativas **y** el
   autoplay (`FeedStore.paused` arranca en el valor de la preferencia, de modo
   que el botón de play sigue funcionando). También se respetan
@@ -176,8 +216,14 @@ responden `403` desde hace tiempo. Para regenerarlos:
 - **La descripción decide si es colapsable por longitud de texto**, no midiendo
   el alto real. Un `ResizeObserver` por clip visible no paga su coste para
   decidir si mostrar un enlace; el umbral falla como mucho en una línea.
-- **Comentarios en vivo, tendencias y creadores son datos simulados.** Solo la
-  telemetría de reproducción es real.
+- **Comentarios, tendencias y creadores son datos simulados.** Solo la
+  telemetría de reproducción es real. El hilo no pagina ni admite respuestas
+  («Responder» y «Ver N respuestas» son los enganches, sin lógica detrás), y
+  lo publicado vive en memoria: se pierde al recargar.
+- **La caja de escritura usa un signal, no Signal Forms.** Es un campo de
+  texto libre con un límite de longitud: sin esquema, campos cruzados ni
+  envío asíncrono, `@angular/forms/signals` no aportaría nada. Cuando el
+  composer gane menciones, respuestas y adjuntos, ahí sí toca migrarlo.
 - **Sin SSR.** Para un feed público de video el SEO importa, pero `@angular/ssr`
   obligaría a guardar todos los accesos a `IntersectionObserver`,
   `HTMLVideoElement` y `matchMedia`. Es la siguiente pieza natural, no un olvido.

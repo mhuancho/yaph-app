@@ -1,4 +1,5 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { CommentsStore } from '../../core/state/comments-store';
 import { FeedStore } from '../../core/state/feed-store';
 import { VideoClip } from '../../core/models/feed';
 import { Icon } from '../../ui/icon';
@@ -52,19 +53,24 @@ import { CompactPipe } from '../../ui/metric-pipes';
       </span>
     </button>
 
-    <!-- Comentarios -->
+    <!-- Comentarios: abre el hilo del clip con su caja de escritura. -->
     <button
+      #commentsButton
       type="button"
       class="group/btn flex flex-col items-center gap-1.5"
-      [attr.aria-label]="'Ver ' + clip().metrics.comments + ' comentarios'"
+      [attr.aria-label]="'Comentar: ' + comments.countFor(clip()) + ' comentarios'"
+      [attr.aria-expanded]="comments.open()"
+      aria-haspopup="dialog"
+      (click)="comments.toggle(commentsButton)"
     >
       <span
-        class="glass-flat grid size-12 place-items-center rounded-full border border-white/12 text-ink transition-[transform,border-color] duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:border-neon-cyan/60"
+        class="glass-flat grid size-12 place-items-center rounded-full border transition-[transform,border-color,box-shadow,color] duration-200 group-hover/btn:-translate-y-0.5 group-hover/btn:border-neon-cyan/60"
+        [class]="commentsClass()"
       >
-        <app-icon name="comment" class="size-[1.35rem]" />
+        <app-icon name="comment" class="size-[1.35rem]" [filled]="comments.open()" />
       </span>
       <span class="metric text-[0.6875rem] font-medium text-ink">
-        {{ clip().metrics.comments | compact }}
+        {{ comments.countFor(clip()) | compact }}
       </span>
     </button>
 
@@ -122,6 +128,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
 export class InteractionRail {
   readonly clip = input.required<VideoClip>();
   protected readonly feed = inject(FeedStore);
+  protected readonly comments = inject(CommentsStore);
 
   protected liked(): boolean {
     return this.feed.isLiked(this.clip().id);
@@ -130,4 +137,15 @@ export class InteractionRail {
   protected saved(): boolean {
     return this.feed.isSaved(this.clip().id);
   }
+
+  /**
+   * Clases completas por rama en vez de varios `[class.x]`: un nombre de clase
+   * con barra (`border-white/12`) no se puede escribir como enlace `[class.…]`,
+   * y así Tailwind sigue encontrando ambas variantes al escanear el fichero.
+   */
+  protected readonly commentsClass = computed(() =>
+    this.comments.open()
+      ? 'border-neon-cyan text-neon-cyan shadow-neon-cyan'
+      : 'border-white/12 text-ink',
+  );
 }

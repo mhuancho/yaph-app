@@ -52,6 +52,26 @@ export function formatPercent(ratio: number): string {
   return `${Math.round(clamp01(ratio) * 100)}%`;
 }
 
+/**
+ * Antigüedad abreviada a partir de minutos transcurridos.
+ *
+ * Recibe minutos y no una fecha: así el formateo es una función pura, el pipe
+ * que la envuelve puede ser puro de verdad y ningún test depende de la hora a
+ * la que se ejecute.
+ */
+export function formatAge(minutes: number): string {
+  if (!Number.isFinite(minutes) || minutes < 1) return 'ahora';
+  if (minutes < 60) return `${Math.floor(minutes)} min`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} d`;
+
+  return `${Math.floor(days / 7)} sem`;
+}
+
 export function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));

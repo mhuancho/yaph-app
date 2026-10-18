@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { Creator } from '../core/models/feed';
+import { CommentAuthor } from '../core/models/feed';
 
 const BASE =
   'relative grid place-items-center rounded-full font-semibold text-abyss select-none ' +
@@ -30,7 +30,9 @@ const SIZES = {
   template: `{{ initials() }}`,
 })
 export class AvatarOrb {
-  readonly creator = input.required<Creator>();
+  // `CommentAuthor` y no `Creator`: el avatar solo necesita nombre y colores,
+  // así sirve igual para la ficha del creador y para una fila de comentario.
+  readonly creator = input.required<CommentAuthor>();
   readonly size = input<keyof typeof SIZES>('md');
 
   protected readonly hostClass = computed(() => `${BASE} ${SIZES[this.size()]}`);

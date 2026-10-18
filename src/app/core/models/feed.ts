@@ -6,14 +6,22 @@
 
 export type BadgeTier = 'creator' | 'partner' | 'pioneer' | 'live';
 
-export interface Creator {
+/**
+ * Identidad mínima para pintar a alguien en una lista: es lo único que
+ * necesitan el avatar y la fila de un comentario. Un comentario no debe
+ * arrastrar el perfil completo de su autor.
+ */
+export interface CommentAuthor {
   readonly id: string;
   readonly handle: string;
   readonly displayName: string;
-  readonly followers: number;
   /** Par de colores para el avatar generado; evita depender de un CDN de imágenes. */
   readonly avatar: AccentPair;
   readonly badge: BadgeTier | null;
+}
+
+export interface Creator extends CommentAuthor {
+  readonly followers: number;
 }
 
 export interface AccentPair {
@@ -65,6 +73,28 @@ export interface VideoClip {
   readonly durationSeconds: number;
   readonly metrics: ClipMetrics;
   readonly location: string | null;
+}
+
+/**
+ * Comentario de un clip.
+ *
+ * La antigüedad viaja como minutos transcurridos, no como marca de tiempo: la
+ * vista no necesita un reloj (ni `Date.now()` dentro de un pipe, que lo
+ * volvería impuro), el render es determinista y los tests no dependen de la
+ * hora a la que se ejecuten. El backend real envía el instante y la capa de
+ * datos lo convierte una sola vez al recibirlo.
+ */
+export interface ClipComment {
+  readonly id: string;
+  readonly author: CommentAuthor;
+  readonly body: string;
+  readonly ageMinutes: number;
+  readonly likes: number;
+  /** Fijado por el creador: va siempre primero en el hilo. */
+  readonly pinned: boolean;
+  readonly replies: number;
+  /** Lo acaba de escribir quien usa la app; se marca para distinguirlo. */
+  readonly own: boolean;
 }
 
 export type HeatLevel = 'rising' | 'hot' | 'steady';

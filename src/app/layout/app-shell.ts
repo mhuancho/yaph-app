@@ -1,6 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { CommentsSheet } from '../features/comments/comments-sheet';
+import { CommentsThread } from '../features/comments/comments-thread';
 import { HudPanel } from '../features/trends/hud-panel';
+import { CommentsStore } from '../core/state/comments-store';
+import { FeedStore } from '../core/state/feed-store';
+import { Viewport } from '../core/state/viewport';
 import { MobileTabBar } from './mobile-tab-bar';
 import { MobileTopBar } from './mobile-top-bar';
 import { NavDock } from './nav-dock';
@@ -15,10 +20,24 @@ import { NavDock } from './nav-dock';
  *
  * El dock y las barras móviles son `fixed`, así que no participan en la
  * rejilla; el espacio se reserva con `md:pl-[6.5rem]`.
+ *
+ * Los comentarios del clip reutilizan la columna derecha en vez de abrir una
+ * cuarta columna: el marco de video está limitado por la altura, así que
+ * conmutar el contenido de esa columna no cambia ni un píxel del reproductor
+ * y no hay reflujo al abrir el hilo. Donde no hay columna derecha, el hilo se
+ * presenta como hoja modal.
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, NavDock, MobileTabBar, MobileTopBar, HudPanel],
+  imports: [
+    RouterOutlet,
+    NavDock,
+    MobileTabBar,
+    MobileTopBar,
+    HudPanel,
+    CommentsThread,
+    CommentsSheet,
+  ],
   host: { class: 'block h-dvh overflow-hidden' },
   template: `
     <a
@@ -38,10 +57,38 @@ import { NavDock } from './nav-dock';
         <router-outlet />
       </section>
 
-      <app-hud-panel class="hidden min-h-0 lg:block" />
+      <div class="hidden min-h-0 py-5 lg:block">
+        @if (sidePanelThread(); as clip) {
+          <app-comments-thread
+            class="glass edge-gradient h-full overflow-hidden rounded-glass border border-white/10 shadow-hud"
+            [clip]="clip"
+            [autoFocus]="true"
+          />
+        } @else {
+          <app-hud-panel />
+        }
+      </div>
     </div>
 
     <app-mobile-tab-bar />
+
+    @if (sheetThread(); as clip) {
+      <app-comments-sheet [clip]="clip" />
+    }
   `,
 })
-export class AppShell {}
+export class AppShell {
+  private readonly feed = inject(FeedStore);
+  private readonly comments = inject(CommentsStore);
+  private readonly viewport = inject(Viewport);
+
+  /** Hilo en la columna derecha (sustituye al HUD mientras está abierto). */
+  protected readonly sidePanelThread = computed(() =>
+    this.comments.open() && this.viewport.hasSidePanel() ? this.feed.activeClip() : null,
+  );
+
+  /** Hilo como hoja modal cuando no hay columna derecha. */
+  protected readonly sheetThread = computed(() =>
+    this.comments.open() && !this.viewport.hasSidePanel() ? this.feed.activeClip() : null,
+  );
+}
