@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Icon } from '../ui/icon';
 import { FeedStore } from '../core/state/feed-store';
 import { MessagesStore } from '../core/state/messages-store';
+import { NotificationsStore } from '../core/state/notifications-store';
 import { NAV_ITEMS, NavItem } from './nav-items';
 
 /**
@@ -67,10 +68,13 @@ import { NAV_ITEMS, NavItem } from './nav-items';
 })
 export class MobileTabBar {
   private readonly messages = inject(MessagesStore);
+  private readonly notifications = inject(NotificationsStore);
 
   /** `0` es falsy, así que `@if (…; as count)` oculta la insignia vacía. */
   protected badgeFor(item: NavItem): number {
-    return item.badge === 'mensajes' ? this.messages.unreadTotal() : 0;
+    if (item.badge !== 'mensajes') return 0;
+    // Una sola bandeja, una sola cifra: mensajes y actividad juntos.
+    return this.messages.unreadTotal() + this.notifications.unreadTotal();
   }
 
   private readonly feed = inject(FeedStore);

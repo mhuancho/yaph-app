@@ -1,6 +1,7 @@
-import { Service, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { CURRENT_USER, MOCK_COMMENTS } from '../data/mock-comments';
 import { ClipComment, VideoClip } from '../models/feed';
+import { PersistentState } from './persistent-state';
 
 /** Límite de un comentario. El composer avisa antes de llegar. */
 export const COMMENT_MAX_LENGTH = 150;
@@ -27,8 +28,16 @@ export class CommentsStore {
   readonly replyingTo = signal<ClipComment | null>(null);
 
   /** Comentarios publicados en esta sesión, por clip. */
-  private readonly published = signal<ReadonlyMap<string, readonly ClipComment[]>>(new Map());
-  private readonly likedIds = signal<ReadonlySet<string>>(new Set<string>());
+  private readonly store = inject(PersistentState);
+  // Un `Map` no es JSON: se guarda como lista de pares.
+  private readonly published = this.store.persisted(
+    signal<ReadonlyMap<string, readonly ClipComment[]>>(
+      new Map(this.store.read<[string, ClipComment[]][]>('comments', [])),
+    ),
+    'comments',
+    (map) => [...map.entries()],
+  );
+  private readonly likedIds = this.store.idSet('comment-likes');
   private readonly expandedIds = signal<ReadonlySet<string>>(new Set<string>());
   private sequence = 0;
 

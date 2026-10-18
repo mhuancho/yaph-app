@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FeedStore } from '../../core/state/feed-store';
+import { SettingsStore } from '../../core/state/settings-store';
 import { Icon } from '../../ui/icon';
 import { CreatorsCard } from './creators-card';
 import { LiveCommentsCard } from './live-comments-card';
@@ -16,7 +17,7 @@ import { TrendingCard } from './trending-card';
  */
 @Component({
   selector: 'app-hud-panel',
-  imports: [TelemetryCard, TrendingCard, CreatorsCard, LiveCommentsCard, Icon],
+  imports: [TelemetryCard, TrendingCard, CreatorsCard, LiveCommentsCard, Icon, RouterLink],
   template: `
     <aside
       class="scrollbar-none flex h-full flex-col gap-4 overflow-y-auto"
@@ -42,7 +43,9 @@ import { TrendingCard } from './trending-card';
         </label>
       </form>
 
-      <app-telemetry-card />
+      @if (settings.showTelemetry()) {
+        <app-telemetry-card />
+      }
       <app-trending-card />
       <app-creators-card />
 
@@ -57,6 +60,7 @@ import { TrendingCard } from './trending-card';
       <p
         class="metric mt-auto flex items-center justify-between px-1 text-[0.625rem] tracking-[0.12em] text-ink-faint uppercase"
       >
+        <a routerLink="/ajustes" class="transition-colors hover:text-neon-cyan">ajustes</a>
         <span>clip {{ feed.activeIndex() + 1 }}/{{ feed.total() }}</span>
         <span class="flex items-center gap-1.5">
           <span class="size-1.5 animate-breathe rounded-full bg-neon-cyan"></span>
@@ -69,6 +73,7 @@ import { TrendingCard } from './trending-card';
 export class HudPanel {
   protected readonly feed = inject(FeedStore);
   private readonly router = inject(Router);
+  protected readonly settings = inject(SettingsStore);
 
   /**
    * Enfocar el campo lleva a la página de resultados en vez de desplegar un

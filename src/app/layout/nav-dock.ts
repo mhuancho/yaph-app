@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { FeedStore } from '../core/state/feed-store';
 import { MessagesStore } from '../core/state/messages-store';
+import { NotificationsStore } from '../core/state/notifications-store';
 import { Icon } from '../ui/icon';
 import { BrandMark } from './brand-mark';
 import { NAV_ITEMS, NavItem } from './nav-items';
@@ -88,10 +89,13 @@ import { NAV_ITEMS, NavItem } from './nav-items';
 })
 export class NavDock {
   private readonly messages = inject(MessagesStore);
+  private readonly notifications = inject(NotificationsStore);
 
   /** `0` es falsy, así que `@if (…; as count)` oculta la insignia vacía. */
   protected badgeFor(item: NavItem): number {
-    return item.badge === 'mensajes' ? this.messages.unreadTotal() : 0;
+    if (item.badge !== 'mensajes') return 0;
+    // Una sola bandeja, una sola cifra: mensajes y actividad juntos.
+    return this.messages.unreadTotal() + this.notifications.unreadTotal();
   }
 
   protected readonly feed = inject(FeedStore);

@@ -55,5 +55,10 @@ export const routes: Routes = [
     title: 'YAPH — Perfil',
     loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
   },
+  {
+    path: 'ajustes',
+    title: 'YAPH — Ajustes',
+    loadComponent: () => import('./features/settings/settings-page').then((m) => m.SettingsPage),
+  },
   { path: '**', redirectTo: '' },
 ];

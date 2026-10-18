@@ -12,6 +12,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { Conversation } from '../../core/models/feed';
 import { MessagesStore } from '../../core/state/messages-store';
+import { NotificationsStore } from '../../core/state/notifications-store';
 import { ProfileStore } from '../../core/state/profile-store';
 import { Viewport } from '../../core/state/viewport';
 import { AvatarOrb } from '../../ui/avatar-orb';
@@ -19,8 +20,10 @@ import { EmojiPicker } from '../../ui/emoji-picker';
 import { Icon } from '../../ui/icon';
 import { AgePipe } from '../../ui/metric-pipes';
 
+type InboxTab = 'actividad' | 'mensajes';
+
 /**
- * Bandeja y conversación.
+ * Bandeja de entrada: actividad y conversaciones.
  *
  * Maestro-detalle: en pantalla ancha conviven las dos columnas; en estrecha se
  * ve una u otra. La decisión se toma en TS y no solo con CSS porque cambia el
@@ -38,55 +41,121 @@ import { AgePipe } from '../../ui/metric-pipes';
           class="scrollbar-none min-h-0 flex-1 overflow-y-auto border-white/10 md:border-r"
           aria-label="Conversaciones"
         >
-          <h1
-            class="metric sticky top-0 z-10 bg-abyss/90 px-4 py-3 text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase"
-          >
-            Mensajes
-            @if (messages.unreadTotal(); as unread) {
-              <span class="ml-2 text-neon-magenta">{{ unread }} sin leer</span>
-            }
-          </h1>
-
-          <ul>
-            @for (conversation of messages.conversations(); track conversation.id) {
-              <li>
+          <div class="sticky top-0 z-10 bg-abyss/90 px-3 pt-3 pb-2">
+            <h1 class="sr-only">Bandeja de entrada</h1>
+            <div
+              role="tablist"
+              aria-label="Bandeja"
+              class="flex gap-1 rounded-full border border-white/10 bg-white/5 p-1"
+              (keydown.arrowright)="moveTab(1, $event)"
+              (keydown.arrowleft)="moveTab(-1, $event)"
+            >
+              @for (option of tabs; track option.id) {
                 <button
                   type="button"
-                  class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors"
-                  [class]="rowClass(conversation)"
-                  [attr.aria-current]="messages.openId() === conversation.id ? 'true' : null"
-                  (click)="messages.openConversation(conversation.id)"
+                  role="tab"
+                  [attr.aria-selected]="tab() === option.id"
+                  [tabIndex]="tab() === option.id ? 0 : -1"
+                  class="metric flex-1 rounded-full px-3 py-1.5 text-[0.6875rem] tracking-[0.1em] uppercase transition-[background-color,color]"
+                  [class]="tabClass(option.id)"
+                  (click)="tab.set(option.id)"
                 >
-                  <app-avatar-orb [creator]="conversation.peer" size="md" />
-
-                  <span class="min-w-0 flex-1">
-                    <span class="flex items-center gap-2">
-                      <span class="truncate text-[0.8125rem] font-medium text-ink">
-                        {{ conversation.peer.handle }}
-                      </span>
-                      @if (last(conversation); as message) {
-                        <span class="metric ml-auto shrink-0 text-[0.625rem] text-ink-faint">
-                          {{ message.ageMinutes | age }}
-                        </span>
-                      }
-                    </span>
-                    <span class="mt-0.5 flex items-center gap-2">
-                      <span class="min-w-0 flex-1 truncate text-[0.75rem] text-ink-muted">
-                        {{ last(conversation)?.body ?? 'Sin mensajes todavía' }}
-                      </span>
-                      @if (conversation.unread > 0) {
-                        <span
-                          class="metric grid min-w-4 shrink-0 place-items-center rounded-full bg-neon-magenta px-1 text-[0.5625rem] font-bold text-abyss"
-                        >
-                          {{ conversation.unread }}
-                        </span>
-                      }
-                    </span>
-                  </span>
+                  {{ option.label }}
+                  @if (badgeFor(option.id); as count) {
+                    <span class="ml-1 text-neon-magenta">{{ count }}</span>
+                  }
                 </button>
-              </li>
-            }
-          </ul>
+              }
+            </div>
+          </div>
+
+          @if (tab() === 'actividad') {
+            <div class="flex items-center justify-between px-4 py-2">
+              <p class="metric text-[0.625rem] tracking-[0.16em] text-ink-faint uppercase">
+                Actividad
+              </p>
+              @if (notifications.unreadTotal() > 0) {
+                <button
+                  type="button"
+                  class="metric text-[0.625rem] text-neon-cyan transition-opacity hover:opacity-80"
+                  (click)="notifications.markAllRead()"
+                >
+                  Marcar todo leído
+                </button>
+              }
+            </div>
+
+            <ul class="pb-4">
+              @for (item of notifications.items(); track item.id) {
+                <li>
+                  <a
+                    [routerLink]="['/perfil', item.actor.handle]"
+                    class="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-white/5"
+                    [class]="item.read ? '' : 'bg-neon-cyan/5'"
+                    (click)="notifications.markRead(item.id)"
+                  >
+                    <app-avatar-orb [creator]="item.actor" size="sm" />
+                    <span class="min-w-0 flex-1">
+                      <span class="block text-[0.8125rem] leading-snug text-ink/90">
+                        <span class="font-medium text-ink">{{ item.actor.handle }}</span>
+                        {{ item.text }}
+                      </span>
+                      <span class="metric mt-0.5 block text-[0.625rem] text-ink-faint">
+                        {{ item.ageMinutes | age }}
+                      </span>
+                    </span>
+                    @if (!item.read) {
+                      <span
+                        aria-label="Sin leer"
+                        class="mt-1.5 size-2 shrink-0 rounded-full bg-neon-magenta"
+                      ></span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+          } @else {
+            <ul>
+              @for (conversation of messages.conversations(); track conversation.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors"
+                    [class]="rowClass(conversation)"
+                    [attr.aria-current]="messages.openId() === conversation.id ? 'true' : null"
+                    (click)="messages.openConversation(conversation.id)"
+                  >
+                    <app-avatar-orb [creator]="conversation.peer" size="md" />
+
+                    <span class="min-w-0 flex-1">
+                      <span class="flex items-center gap-2">
+                        <span class="truncate text-[0.8125rem] font-medium text-ink">
+                          {{ conversation.peer.handle }}
+                        </span>
+                        @if (last(conversation); as message) {
+                          <span class="metric ml-auto shrink-0 text-[0.625rem] text-ink-faint">
+                            {{ message.ageMinutes | age }}
+                          </span>
+                        }
+                      </span>
+                      <span class="mt-0.5 flex items-center gap-2">
+                        <span class="min-w-0 flex-1 truncate text-[0.75rem] text-ink-muted">
+                          {{ last(conversation)?.body ?? 'Sin mensajes todavía' }}
+                        </span>
+                        @if (conversation.unread > 0) {
+                          <span
+                            class="metric grid min-w-4 shrink-0 place-items-center rounded-full bg-neon-magenta px-1 text-[0.5625rem] font-bold text-abyss"
+                          >
+                            {{ conversation.unread }}
+                          </span>
+                        }
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
         </aside>
       }
 
@@ -188,6 +257,7 @@ export class MessagesPage {
   readonly con = input<string>();
 
   protected readonly messages = inject(MessagesStore);
+  protected readonly notifications = inject(NotificationsStore);
   protected readonly viewport = inject(Viewport);
   private readonly profiles = inject(ProfileStore);
 
@@ -205,8 +275,34 @@ export class MessagesPage {
     () => !this.viewport.isCompact() || this.messages.openId() === null,
   );
   protected readonly showThread = computed(
-    () => !this.viewport.isCompact() || this.messages.openId() !== null,
+    () =>
+      this.tab() === 'mensajes' && (!this.viewport.isCompact() || this.messages.openId() !== null),
   );
+
+  protected readonly tabs = [
+    { id: 'actividad', label: 'Actividad' },
+    { id: 'mensajes', label: 'Mensajes' },
+  ] as const satisfies readonly { id: InboxTab; label: string }[];
+
+  /** Abrir con `?con=` implica que se quiere la pestaña de mensajes. */
+  protected readonly tab = linkedSignal<string | undefined, InboxTab>({
+    source: this.con,
+    computation: (con) => (con ? 'mensajes' : 'actividad'),
+  });
+
+  protected badgeFor(id: InboxTab): number {
+    return id === 'mensajes' ? this.messages.unreadTotal() : this.notifications.unreadTotal();
+  }
+
+  protected tabClass(id: InboxTab): string {
+    return this.tab() === id ? 'bg-neon-cyan/15 text-neon-cyan' : 'text-ink-muted hover:text-ink';
+  }
+
+  protected moveTab(delta: number, event: Event): void {
+    event.preventDefault();
+    const index = this.tabs.findIndex((option) => option.id === this.tab());
+    this.tab.set(this.tabs[(index + delta + this.tabs.length) % this.tabs.length].id);
+  }
 
   constructor() {
     effect(() => {

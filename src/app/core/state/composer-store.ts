@@ -4,6 +4,7 @@ import { CURRENT_PROFILE } from '../data/mock-profiles';
 import { clipSources } from '../data/mock-feed';
 import { AudioTrack, VideoClip } from '../models/feed';
 import { FeedStore } from './feed-store';
+import { PersistentState } from './persistent-state';
 import { ToastStore } from './toast-store';
 
 /** Clips de muestra que hacen las veces de «galería» del dispositivo. */
@@ -34,6 +35,7 @@ export const DESCRIPTION_MAX_LENGTH = 180;
 export class ComposerStore {
   private readonly feed = inject(FeedStore);
   private readonly toasts = inject(ToastStore);
+  private readonly store = inject(PersistentState);
 
   readonly footage = signal<(typeof SAMPLE_FOOTAGE)[number]>(SAMPLE_FOOTAGE[0]);
   readonly description = signal('');
@@ -44,7 +46,7 @@ export class ComposerStore {
   readonly sounds = ALL_SOUNDS.map((entry) => entry.sound).slice(0, 10);
 
   /** Publicaciones creadas en esta sesión; el perfil propio las muestra. */
-  readonly published = signal<readonly VideoClip[]>([]);
+  readonly published = this.store.signal<readonly VideoClip[]>('my-posts', []);
 
   private sequence = 0;
 

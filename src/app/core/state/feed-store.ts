@@ -1,7 +1,9 @@
-import { computed, linkedSignal, Service, signal } from '@angular/core';
+import { computed, inject, linkedSignal, Service, signal } from '@angular/core';
 import { ALL_CLIPS } from '../data/catalog';
 import { MOCK_CLIPS } from '../data/mock-feed';
 import { FeedCollection, VideoClip } from '../models/feed';
+import { PersistentState } from './persistent-state';
+import { SettingsStore } from './settings-store';
 
 /** Cuántos clips se montan a cada lado del activo. Ver `shouldMount`. */
 export const MOUNT_RADIUS = 1;
@@ -17,6 +19,11 @@ const PAGE_SIZE = 6;
  */
 @Service()
 export class FeedStore {
+  // Las dependencias van primero porque varios campos leen de ellas al
+  // inicializarse, y las propiedades de clase se evalúan en orden.
+  private readonly store = inject(PersistentState);
+  private readonly settings = inject(SettingsStore);
+
   /**
    * Colección en reproducción. «Para ti» es un ranking y la parrilla de un
    * perfil es un listado por autor: el feed reproduce una u otra, y por eso la
@@ -32,11 +39,12 @@ export class FeedStore {
   readonly total = computed(() => this.clips().length);
 
   /**
-   * Arranca silenciado: todos los navegadores bloquean el autoplay con audio
-   * sin gesto previo del usuario, y un `play()` rechazado deja el feed
+   * Arranca silenciado salvo que el usuario diga lo contrario en Ajustes.
+   * Es el valor por defecto porque todos los navegadores bloquean el autoplay
+   * con audio sin gesto previo, y un `play()` rechazado dejaría el feed
    * congelado en el primer clip.
    */
-  readonly muted = signal(true);
+  readonly muted = signal(this.settings.startMuted());
 
   /**
    * Pausa del clip activo. No significa "fuera de vista": un clip que sale de
@@ -49,11 +57,13 @@ export class FeedStore {
    * WCAG 2.2.2 pide de un contenido que arranca solo es poder pararlo, y eso lo
    * cubre el botón de reproducción a pantalla completa de `VideoStage`.
    */
-  readonly paused = signal(false);
+  readonly paused = signal(!this.settings.autoplay());
 
-  private readonly likedIds = signal<ReadonlySet<string>>(new Set<string>());
-  private readonly savedIds = signal<ReadonlySet<string>>(new Set<string>());
-  private readonly followedIds = signal<ReadonlySet<string>>(new Set<string>());
+  // Lo que el usuario ha hecho sobrevive a la recarga; el catálogo no, que
+  // vendría del servidor en cuanto haya uno.
+  private readonly likedIds = this.store.idSet('liked');
+  private readonly savedIds = this.store.idSet('saved');
+  private readonly followedIds = this.store.idSet('followed');
 
   /**
    * La descripción se repliega sola al cambiar de clip: `linkedSignal` mantiene
@@ -81,8 +91,8 @@ export class FeedStore {
     const clamped = Math.min(Math.max(index, 0), Math.max(this.total() - 1, 0));
     if (clamped === this.activeIndex()) return;
     this.activeIndex.set(clamped);
-    // Un clip nuevo arranca reproduciendo: la pausa es del clip, no del feed.
-    this.paused.set(false);
+    // Un clip nuevo sigue la preferencia: la pausa es del clip, no del feed.
+    this.paused.set(!this.settings.autoplay());
   }
 
   activateById(clipId: string): void {
@@ -100,7 +110,7 @@ export class FeedStore {
 
     this.current.set(collection);
     this.activeIndex.set(Math.max(index, 0));
-    this.paused.set(false);
+    this.paused.set(!this.settings.autoplay());
   }
 
   /**

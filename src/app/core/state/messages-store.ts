@@ -1,6 +1,7 @@
-import { computed, Service, signal } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import { MOCK_CONVERSATIONS } from '../data/mock-messages';
 import { CommentAuthor, Conversation, DirectMessage } from '../models/feed';
+import { PersistentState } from './persistent-state';
 
 /**
  * Bandeja de mensajes directos.
@@ -11,7 +12,11 @@ import { CommentAuthor, Conversation, DirectMessage } from '../models/feed';
  */
 @Service()
 export class MessagesStore {
-  readonly conversations = signal<readonly Conversation[]>(MOCK_CONVERSATIONS);
+  private readonly store = inject(PersistentState);
+  readonly conversations = this.store.signal<readonly Conversation[]>(
+    'conversations',
+    MOCK_CONVERSATIONS,
+  );
   readonly openId = signal<string | null>(null);
 
   private sequence = 0;

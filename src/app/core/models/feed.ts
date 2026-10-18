@@ -182,6 +182,20 @@ export interface Conversation {
   readonly unread: number;
 }
 
+export type NotificationKind = 'like' | 'comment' | 'follow' | 'mention' | 'live';
+
+/** Entrada de la bandeja de actividad. */
+export interface AppNotification {
+  readonly id: string;
+  readonly kind: NotificationKind;
+  readonly actor: CommentAuthor;
+  readonly text: string;
+  readonly ageMinutes: number;
+  readonly read: boolean;
+  /** Clip al que lleva, si la actividad tiene uno. */
+  readonly clipId: string | null;
+}
+
 export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 
 /** Telemetría real del elemento de video activo (no son cifras decorativas). */
