@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Icon } from '../ui/icon';
+import { I18nStore } from '../core/i18n/i18n-store';
 import { FeedStore } from '../core/state/feed-store';
 import { MessagesStore } from '../core/state/messages-store';
 import { NotificationsStore } from '../core/state/notifications-store';
@@ -19,7 +20,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
   host: { class: 'contents' },
   template: `
     <nav
-      aria-label="Navegación principal"
+      [attr.aria-label]="i18n.t('nav.main')"
       class="glass fixed inset-x-0 bottom-0 z-40 border-t border-white/10 md:hidden"
     >
       <ul
@@ -32,7 +33,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
                    y el único control con relleno degradado de toda la app. -->
               <a
                 [routerLink]="item.path"
-                [attr.aria-label]="item.label"
+                [attr.aria-label]="i18n.t(item.label)"
                 class="mx-auto grid h-10 w-14 place-items-center rounded-xl bg-[linear-gradient(130deg,var(--color-neon-cyan),var(--color-neon-magenta))] text-abyss shadow-neon-cyan transition-transform duration-200 active:scale-95"
               >
                 <app-icon name="create" class="size-6" [strokeWidth]="2.2" />
@@ -48,14 +49,16 @@ import { NAV_ITEMS, NavItem } from './nav-items';
                 class="relative mx-auto flex h-10 w-14 flex-col items-center justify-center gap-1 rounded-xl text-ink-muted transition-colors duration-200 active:bg-white/5"
               >
                 <app-icon [name]="item.icon" class="size-[1.3rem]" />
-                <span class="text-[0.5625rem] font-medium tracking-wide">{{ item.label }}</span>
+                <span class="text-[0.5625rem] font-medium tracking-wide">{{
+                  i18n.t(item.label)
+                }}</span>
 
                 @if (badgeFor(item); as count) {
                   <span
                     class="metric absolute top-0 right-1.5 grid min-w-4 place-items-center rounded-full bg-neon-magenta px-1 text-[0.5625rem] font-bold text-abyss"
                   >
                     {{ count }}
-                    <span class="sr-only">sin leer</span>
+                    <span class="sr-only">{{ i18n.t('nav.unread') }}</span>
                   </span>
                 }
               </a>
@@ -79,6 +82,7 @@ export class MobileTabBar {
 
   private readonly feed = inject(FeedStore);
   protected readonly navItems = NAV_ITEMS;
+  protected readonly i18n = inject(I18nStore);
 
   /** Igual que en el dock: «Inicio» vuelve a la recomendación general. */
   protected onNavigate(item: NavItem): void {

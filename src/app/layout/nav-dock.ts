@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { I18nStore } from '../core/i18n/i18n-store';
 import { FeedStore } from '../core/state/feed-store';
 import { MessagesStore } from '../core/state/messages-store';
 import { NotificationsStore } from '../core/state/notifications-store';
@@ -20,7 +21,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
   host: { class: 'contents' },
   template: `
     <nav
-      aria-label="Navegación principal"
+      [attr.aria-label]="i18n.t('nav.main')"
       class="fixed top-1/2 left-5 z-40 hidden -translate-y-1/2 md:block"
     >
       <div
@@ -29,7 +30,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
         <a
           routerLink="/"
           class="mb-1 rounded-xl"
-          aria-label="YAPH, ir al inicio"
+          [attr.aria-label]="i18n.t('nav.home.aria')"
           (click)="feed.resetToForYou()"
         >
           <app-brand-mark />
@@ -45,7 +46,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
                 [routerLinkActiveOptions]="{ exact: item.exact }"
                 #active="routerLinkActive"
                 [attr.aria-current]="active.isActive ? 'page' : null"
-                [attr.aria-label]="item.label"
+                [attr.aria-label]="i18n.t(item.label)"
                 class="relative grid size-12 place-items-center rounded-2xl border border-transparent text-ink-muted transition-[color,background-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-white/10 hover:bg-white/5 hover:text-ink"
               >
                 <app-icon [name]="item.icon" class="size-[1.35rem]" />
@@ -55,7 +56,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
                     class="metric absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-neon-magenta px-1 text-[0.5625rem] font-bold text-abyss"
                   >
                     {{ count }}
-                    <span class="sr-only">sin leer</span>
+                    <span class="sr-only">{{ i18n.t('nav.unread') }}</span>
                   </span>
                 }
               </a>
@@ -66,7 +67,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
                 aria-hidden="true"
                 class="glass pointer-events-none absolute top-1/2 left-full ml-3 border border-white/10 -translate-y-1/2 scale-95 rounded-lg px-2.5 py-1 text-xs whitespace-nowrap text-ink opacity-0 transition-[opacity,transform] duration-200 group-hover:scale-100 group-hover:opacity-100"
               >
-                {{ item.label }}
+                {{ i18n.t(item.label) }}
               </span>
             </li>
           }
@@ -78,7 +79,7 @@ import { NAV_ITEMS, NavItem } from './nav-items';
           type="button"
           class="grid size-11 place-items-center rounded-2xl border border-transparent text-ink-muted transition-colors duration-200 hover:border-white/10 hover:bg-white/5 hover:text-neon-cyan"
           [attr.aria-pressed]="feed.muted()"
-          [attr.aria-label]="feed.muted() ? 'Activar sonido' : 'Silenciar'"
+          [attr.aria-label]="feed.muted() ? i18n.t('action.unmute') : i18n.t('action.mute')"
           (click)="feed.toggleMute()"
         >
           <app-icon [name]="feed.muted() ? 'volume-off' : 'volume-on'" class="size-5" />
@@ -99,6 +100,7 @@ export class NavDock {
   }
 
   protected readonly feed = inject(FeedStore);
+  protected readonly i18n = inject(I18nStore);
   protected readonly navItems = NAV_ITEMS;
 
   /**

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Una serie por rama: un push nuevo cancela el anterior en lugar de encolar
+# trabajo que ya no interesa a nadie.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # La versión sale de .nvmrc para que CI y el entorno local no se separen.
+      # Angular 22 exige Node >= 22.22.3.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Formato
+        run: npm run format:check
+
+      - name: Pruebas
+        run: npm test -- --no-watch
+
+      - name: Build de producción
+        run: npm run build
+
+      # El presupuesto de `angular.json` ya falla el build si el bundle crece
+      # de más; esto deja el tamaño a la vista en el registro del job.
+      - name: Tamaño del bundle
+        run: du -sh dist/yaph-app/browser && ls -lh dist/yaph-app/browser/*.js

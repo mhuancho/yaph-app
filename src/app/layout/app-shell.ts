@@ -6,6 +6,7 @@ import { HudPanel } from '../features/trends/hud-panel';
 import { CommentsStore } from '../core/state/comments-store';
 import { FeedStore } from '../core/state/feed-store';
 import { Viewport } from '../core/state/viewport';
+import { I18nStore } from '../core/i18n/i18n-store';
 import { ClipActionsStore } from '../core/state/clip-actions-store';
 import { ClipActionsSheet } from '../features/feed/clip-actions-sheet';
 import { ToastHost } from '../ui/toast-host';
@@ -49,7 +50,7 @@ import { NavDock } from './nav-dock';
       href="#contenido"
       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-carbon focus:px-4 focus:py-2 focus:text-sm focus:text-ink"
     >
-      Saltar al contenido
+      {{ i18n.t('nav.skip') }}
     </a>
 
     <app-nav-dock />
@@ -92,6 +93,7 @@ export class AppShell {
   private readonly comments = inject(CommentsStore);
   private readonly viewport = inject(Viewport);
   protected readonly actions = inject(ClipActionsStore);
+  protected readonly i18n = inject(I18nStore);
 
   /** Hilo en la columna derecha (sustituye al HUD mientras está abierto). */
   protected readonly sidePanelThread = computed(() =>

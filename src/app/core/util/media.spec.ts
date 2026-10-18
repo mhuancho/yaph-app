@@ -22,8 +22,8 @@ function withCanPlayType(answer: (type: string) => CanPlayTypeResult, run: () =>
 }
 
 describe('pickPlayableSource', () => {
-  it('devuelve cadena vacía sin fuentes', () => {
-    expect(pickPlayableSource([])).toBe('');
+  it('no devuelve fuente si la lista está vacía', () => {
+    expect(pickPlayableSource([])).toBeNull();
   });
 
   it('prefiere la fuente que el navegador declara reproducible', () => {
@@ -45,5 +45,24 @@ describe('pickPlayableSource', () => {
       () => '',
       () => expect(pickPlayableSource([MP4, WEBM])).toBe(MP4.src),
     );
+  });
+
+  /**
+   * La rama del prerender. Devolver una fuente aquí sería peor que no devolver
+   * ninguna: saldría en el HTML y el navegador la descargaría antes de hidratar
+   * sin que nadie haya comprobado si puede decodificarla.
+   */
+  it('no elige fuente cuando no hay DOM al que preguntar', () => {
+    const original = globalThis.document;
+    Reflect.deleteProperty(globalThis, 'document');
+    try {
+      expect(pickPlayableSource([MP4, WEBM])).toBeNull();
+    } finally {
+      Object.defineProperty(globalThis, 'document', {
+        value: original,
+        configurable: true,
+        writable: true,
+      });
+    }
   });
 });

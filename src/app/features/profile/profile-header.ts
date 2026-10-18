@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CreatorProfile } from '../../core/models/feed';
 import { FeedStore } from '../../core/state/feed-store';
+import { I18nStore } from '../../core/i18n/i18n-store';
 import { ProfileStore } from '../../core/state/profile-store';
 import { ShareService } from '../../core/state/share-service';
 import { AvatarOrb } from '../../ui/avatar-orb';
@@ -67,30 +68,30 @@ import { CompactPipe } from '../../ui/metric-pipes';
              deben desplazar el resto de la fila. -->
         <dl class="mt-4 flex justify-center gap-6 md:justify-start">
           <div>
-            <dt class="sr-only">Siguiendo</dt>
+            <dt class="sr-only">{{ i18n.t('profile.following') }}</dt>
             <dd class="metric text-base font-semibold text-ink">
               {{ profile().following | compact }}
             </dd>
             <p class="metric text-[0.625rem] tracking-[0.12em] text-ink-faint uppercase">
-              siguiendo
+              {{ i18n.t('profile.following') }}
             </p>
           </div>
           <div>
-            <dt class="sr-only">Seguidores</dt>
+            <dt class="sr-only">{{ i18n.t('profile.followers') }}</dt>
             <dd class="metric text-base font-semibold text-ink">
               {{ profiles.followerCount(profile()) | compact }}
             </dd>
             <p class="metric text-[0.625rem] tracking-[0.12em] text-ink-faint uppercase">
-              seguidores
+              {{ i18n.t('profile.followers') }}
             </p>
           </div>
           <div>
-            <dt class="sr-only">Me gusta</dt>
+            <dt class="sr-only">{{ i18n.t('profile.likes') }}</dt>
             <dd class="metric text-base font-semibold text-ink">
               {{ profile().likes | compact }}
             </dd>
             <p class="metric text-[0.625rem] tracking-[0.12em] text-ink-faint uppercase">
-              me gusta
+              {{ i18n.t('profile.likes') }}
             </p>
           </div>
         </dl>
@@ -102,12 +103,12 @@ import { CompactPipe } from '../../ui/metric-pipes';
               class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-ink transition-colors duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"
             >
               <app-icon name="edit" class="size-3.5" />
-              Editar perfil
+              {{ i18n.t('action.edit.profile') }}
             </button>
             <button
               type="button"
               class="grid size-9 place-items-center rounded-full border border-white/15 text-ink-muted transition-colors duration-200 hover:border-neon-cyan/50 hover:text-neon-cyan"
-              aria-label="Compartir perfil"
+              [attr.aria-label]="i18n.t('action.share')"
               (click)="shareProfile()"
             >
               <app-icon name="share" class="size-4" />
@@ -120,7 +121,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
               [attr.aria-pressed]="followed()"
               (click)="profiles.toggleFollow(profile().id)"
             >
-              {{ followed() ? 'Siguiendo' : 'Seguir' }}
+              {{ followed() ? i18n.t('action.following') : i18n.t('action.follow') }}
             </button>
             <a
               [routerLink]="['/mensajes']"
@@ -139,7 +140,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
               (click)="watchLive()"
             >
               <span class="size-1.5 animate-breathe rounded-full bg-neon-magenta"></span>
-              Ver directo
+              {{ i18n.t('action.watch.live') }}
               @if (liveViewers(); as viewers) {
                 <span class="metric text-ink-muted">{{ viewers | compact }}</span>
               }
@@ -170,6 +171,7 @@ export class ProfileHeader {
   readonly profile = input.required<CreatorProfile>();
 
   protected readonly profiles = inject(ProfileStore);
+  protected readonly i18n = inject(I18nStore);
   private readonly feed = inject(FeedStore);
   private readonly router = inject(Router);
   private readonly sharing = inject(ShareService);

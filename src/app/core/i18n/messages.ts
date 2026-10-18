@@ -1,0 +1,147 @@
+/**
+ * Cadenas de interfaz.
+ *
+ * Solo se traduce el *chrome*: navegación, botones, títulos de sección,
+ * etiquetas de accesibilidad y estados vacíos. El contenido —descripciones de
+ * clips, comentarios, mensajes— se queda en el idioma en que se publicó, que
+ * es como se comporta cualquier aplicación social: traducir la interfaz no
+ * traduce lo que escribe la gente.
+ *
+ * El español es la base y define las claves; cualquier idioma nuevo copia este
+ * objeto. Las claves ausentes caen al español en vez de mostrar la clave.
+ */
+export const ES = {
+  'nav.home': 'Inicio',
+  'nav.explore': 'Explorar',
+  'nav.create': 'Crear',
+  'nav.messages': 'Mensajes',
+  'nav.profile': 'Perfil',
+  'nav.main': 'Navegación principal',
+  'nav.unread': 'sin leer',
+  'nav.skip': 'Saltar al contenido',
+  'nav.home.aria': 'YAPH, ir al inicio',
+  'nav.settings': 'ajustes',
+
+  'action.search': 'Buscar',
+  'action.search.placeholder': 'Buscar clips, sonidos, creadores',
+  'action.mute': 'Silenciar',
+  'action.unmute': 'Activar sonido',
+  'action.follow': 'Seguir',
+  'action.following': 'Siguiendo',
+  'action.share': 'Compartir',
+  'action.close': 'Cerrar',
+  'action.back': 'Volver',
+  'action.send': 'Enviar',
+  'action.publish': 'Publicar',
+  'action.discard': 'Descartar',
+  'action.edit.profile': 'Editar perfil',
+  'action.watch.live': 'Ver directo',
+
+  'profile.following': 'siguiendo',
+  'profile.followers': 'seguidores',
+  'profile.likes': 'me gusta',
+  'profile.tab.videos': 'Videos',
+  'profile.tab.saved': 'Guardados',
+  'profile.tab.liked': 'Me gusta',
+  'profile.posts': 'publicaciones',
+  'profile.views': 'reproducciones',
+  'profile.notfound': 'Perfil no encontrado',
+  'profile.notfound.hint': 'No existe ninguna cuenta con el identificador',
+  'profile.goto.mine': 'Ir a mi perfil',
+  'profile.empty.videos': 'Todavía no hay publicaciones.',
+  'profile.empty.saved': 'Aún no has guardado ningún clip. Toca el marcador en el feed.',
+  'profile.empty.liked': 'Los clips a los que des me gusta aparecerán aquí.',
+
+  'settings.title': 'Ajustes',
+  'settings.playback': 'Reproducción',
+  'settings.autoplay': 'Reproducción automática',
+  'settings.autoplay.hint': 'Los clips empiezan solos al entrar en pantalla.',
+  'settings.muted': 'Empezar silenciado',
+  'settings.muted.hint':
+    'Los navegadores bloquean el sonido sin un gesto previo; desactivarlo puede impedir que el clip arranque.',
+  'settings.data': 'Datos',
+  'settings.interface': 'Interfaz',
+  'settings.telemetry': 'Panel de telemetría',
+  'settings.telemetry.hint': 'Muestra resolución, buffer y fotogramas descartados del clip activo.',
+  'settings.privacy': 'Privacidad',
+  'settings.blocked': 'Cuentas bloqueadas',
+  'settings.blocked.hint': 'No verás sus clips en ningún feed.',
+  'settings.unblock': 'Desbloquear',
+  'settings.local': 'Datos locales',
+  'settings.local.hint':
+    'Me gusta, guardados, seguimientos, comentarios y publicaciones se guardan en este navegador. Nada sale de aquí.',
+  'settings.local.clear': 'Borrar datos locales',
+  'settings.ephemeral':
+    'El almacenamiento local no está disponible, así que estas preferencias solo duran lo que la pestaña.',
+  'settings.language': 'Idioma',
+  'settings.language.hint': 'Se traduce la interfaz; el contenido conserva su idioma original.',
+} as const;
+
+export type MessageKey = keyof typeof ES;
+
+export const EN: Partial<Record<MessageKey, string>> = {
+  'nav.home': 'Home',
+  'nav.explore': 'Explore',
+  'nav.create': 'Create',
+  'nav.messages': 'Inbox',
+  'nav.profile': 'Profile',
+  'nav.main': 'Main navigation',
+  'nav.unread': 'unread',
+  'nav.skip': 'Skip to content',
+  'nav.home.aria': 'YAPH, go home',
+  'nav.settings': 'settings',
+
+  'action.search': 'Search',
+  'action.search.placeholder': 'Search clips, sounds, creators',
+  'action.mute': 'Mute',
+  'action.unmute': 'Unmute',
+  'action.follow': 'Follow',
+  'action.following': 'Following',
+  'action.share': 'Share',
+  'action.close': 'Close',
+  'action.back': 'Back',
+  'action.send': 'Send',
+  'action.publish': 'Publish',
+  'action.discard': 'Discard',
+  'action.edit.profile': 'Edit profile',
+  'action.watch.live': 'Watch live',
+
+  'profile.following': 'following',
+  'profile.followers': 'followers',
+  'profile.likes': 'likes',
+  'profile.tab.videos': 'Videos',
+  'profile.tab.saved': 'Saved',
+  'profile.tab.liked': 'Liked',
+  'profile.posts': 'posts',
+  'profile.views': 'views',
+  'profile.notfound': 'Profile not found',
+  'profile.notfound.hint': 'No account exists with the handle',
+  'profile.goto.mine': 'Go to my profile',
+  'profile.empty.videos': 'Nothing posted yet.',
+  'profile.empty.saved': 'You have not saved any clip yet. Tap the bookmark in the feed.',
+  'profile.empty.liked': 'Clips you like will show up here.',
+
+  'settings.title': 'Settings',
+  'settings.playback': 'Playback',
+  'settings.autoplay': 'Autoplay',
+  'settings.autoplay.hint': 'Clips start on their own when they come into view.',
+  'settings.muted': 'Start muted',
+  'settings.muted.hint':
+    'Browsers block sound without a prior gesture; turning this off may stop the clip from starting.',
+  'settings.data': 'Data',
+  'settings.interface': 'Interface',
+  'settings.telemetry': 'Telemetry panel',
+  'settings.telemetry.hint': 'Shows resolution, buffer and dropped frames of the active clip.',
+  'settings.privacy': 'Privacy',
+  'settings.blocked': 'Blocked accounts',
+  'settings.blocked.hint': 'You will not see their clips in any feed.',
+  'settings.unblock': 'Unblock',
+  'settings.local': 'Local data',
+  'settings.local.hint':
+    'Likes, saves, follows, comments and posts are stored in this browser. Nothing leaves it.',
+  'settings.local.clear': 'Clear local data',
+  'settings.ephemeral':
+    'Local storage is unavailable, so these preferences only last as long as the tab.',
+  'settings.language': 'Language',
+  'settings.language.hint': 'The interface is translated; content keeps its original language.',
+};

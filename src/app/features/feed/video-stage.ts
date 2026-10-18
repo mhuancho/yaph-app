@@ -5,9 +5,12 @@ import {
   ElementRef,
   inject,
   input,
+  linkedSignal,
   signal,
+  PLATFORM_ID,
   viewChild,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { EMPTY_TELEMETRY, PlaybackState, VideoClip } from '../../core/models/feed';
 import { FeedStore } from '../../core/state/feed-store';
@@ -185,7 +188,6 @@ import { InteractionRail } from './interaction-rail';
               class="absolute inset-0 size-full object-cover"
               loop
               playsinline
-              [src]="primarySource()"
               [muted]="feed.muted()"
               [attr.preload]="active() ? 'auto' : 'metadata'"
               (loadedmetadata)="onProbe('loading')"
@@ -316,16 +318,35 @@ export class VideoStage {
   protected readonly telemetry = inject(PlaybackTelemetryStore);
   protected readonly actions = inject(ClipActionsStore);
   private readonly router = inject(Router);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly frameRef = viewChild<ElementRef<HTMLElement>>('frame');
 
   protected readonly isPlaying = signal(false);
-  protected readonly failed = signal(false);
   protected readonly bursts = signal<readonly { id: number; x: number; y: number }[]>([]);
   private burstSequence = 0;
 
+  /**
+   * `null` mientras no haya navegador que negocie el códec, que es el caso del
+   * prerender. Elegirla ahí sería peor que no elegir ninguna: el HTML saldría
+   * con un `src` que el navegador descarga antes de hidratar y, si ese
+   * contenedor no es el que soporta, el `error` anterior a la hidratación llega
+   * al componente por replay de eventos y lo deja en fallo teniendo disponible
+   * el códec correcto. Lo escribe el efecto, no un binding; ver el constructor.
+   */
   protected readonly primarySource = computed(() => pickPlayableSource(this.clip().sources));
+
+  /**
+   * El fallo pertenece a la fuente, no al componente: al cambiar
+   * `primarySource` se reintenta. Hace falta porque la primera fuente real
+   * llega en el navegador —el servidor no sabe qué códec hay— y porque un clip
+   * distinto en el mismo componente no hereda el fallo del anterior.
+   */
+  protected readonly failed = linkedSignal<string | null, boolean>({
+    source: this.primarySource,
+    computation: () => false,
+  });
 
   protected readonly ariaLabel = computed(
     () => `Clip de ${this.clip().creator.displayName}: ${this.clip().description}`,
@@ -343,6 +364,11 @@ export class VideoStage {
 
   constructor() {
     effect(() => {
+      // En servidor el `<video>` del prerender no es un elemento de medios
+      // real: llamar a `pause()` o `play()` sobre él lanza. La reproducción es
+      // cosa del navegador, así que aquí no hay nada que hacer.
+      if (!this.isBrowser) return;
+
       const video = this.videoRef()?.nativeElement;
 
       if (!video) {
@@ -351,6 +377,21 @@ export class VideoStage {
         // panel HUD no siga mostrando la telemetría del clip anterior.
         if (this.active()) this.telemetry.report({ ...EMPTY_TELEMETRY, state: 'loading' });
         return;
+      }
+
+      // El `src` se escribe a mano en vez de con un binding. `[attr.src]` con
+      // `null` no quita el atributo: Angular pasa el nulo por el saneador de
+      // URL y deja `src=""`, que el navegador resuelve contra la URL de la
+      // página e intenta cargar el HTML como medio. Y en el prerender no hay
+      // fuente elegida —nadie a quien preguntar por el códec—, así que el
+      // elemento tiene que salir sin atributo y empezar a descargar al
+      // hidratar, no antes. Se compara el atributo porque reasignarlo
+      // reinicia la carga.
+      const source = this.primarySource();
+      if (!source) {
+        video.removeAttribute('src');
+      } else if (video.getAttribute('src') !== source) {
+        video.setAttribute('src', source);
       }
 
       // `muted` debe estar puesto como propiedad antes de `play()`: el binding

@@ -46,7 +46,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
                 loop
                 playsinline
                 autoplay
-                [src]="previewSrc()"
+                [attr.src]="previewSrc()"
               ></video>
               <span class="clip-poster absolute inset-0 -z-10"></span>
 

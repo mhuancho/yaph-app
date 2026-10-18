@@ -1,6 +1,8 @@
 import { Component, computed, effect, inject, input, linkedSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CreatorProfile, FeedCollection } from '../../core/models/feed';
+import { I18nStore } from '../../core/i18n/i18n-store';
+import { MessageKey } from '../../core/i18n/messages';
 import { ProfileStore } from '../../core/state/profile-store';
 import { Icon } from '../../ui/icon';
 import { CompactPipe } from '../../ui/metric-pipes';
@@ -55,7 +57,7 @@ let instances = 0;
                   [class]="tabClass(option.id)"
                   (click)="tab.set(option.id)"
                 >
-                  {{ option.label }}
+                  {{ i18n.t(option.label) }}
                 </button>
               }
             </div>
@@ -64,9 +66,9 @@ let instances = 0;
               class="metric mt-6 flex items-center gap-2 border-b border-white/10 pb-2 text-[0.6875rem] tracking-[0.14em] text-ink-faint uppercase"
             >
               <app-icon name="grid" class="size-3.5" />
-              {{ profiles.posts().length }} publicaciones
+              {{ profiles.posts().length }} {{ i18n.t('profile.posts') }}
               <span class="ml-auto normal-case">
-                {{ profiles.totalViews() | compact }} reproducciones
+                {{ profiles.totalViews() | compact }} {{ i18n.t('profile.views') }}
               </span>
             </p>
           }
@@ -93,15 +95,17 @@ let instances = 0;
       } @else {
         <div class="grid h-full place-items-center px-6">
           <div class="max-w-sm text-center">
-            <h1 class="font-display text-xl font-semibold text-ink">Perfil no encontrado</h1>
+            <h1 class="font-display text-xl font-semibold text-ink">
+              {{ i18n.t('profile.notfound') }}
+            </h1>
             <p class="mt-2 text-sm text-ink-muted">
-              No existe ninguna cuenta con el identificador «{{ handle() }}».
+              {{ i18n.t('profile.notfound.hint') }} «{{ handle() }}».
             </p>
             <a
               routerLink="/perfil"
               class="metric mt-5 inline-block rounded-full border border-neon-cyan/50 bg-neon-cyan/10 px-4 py-2 text-[0.6875rem] tracking-[0.1em] text-neon-cyan uppercase"
             >
-              Ir a mi perfil
+              {{ i18n.t('profile.goto.mine') }}
             </a>
           </div>
         </div>
@@ -114,12 +118,13 @@ export class ProfilePage {
   readonly handle = input<string>();
 
   protected readonly profiles = inject(ProfileStore);
+  protected readonly i18n = inject(I18nStore);
   protected readonly uid = `-${(instances += 1)}`;
   protected readonly tabs = [
-    { id: 'videos', label: 'Videos' },
-    { id: 'guardados', label: 'Guardados' },
-    { id: 'gustados', label: 'Me gusta' },
-  ] as const satisfies readonly { id: Tab; label: string }[];
+    { id: 'videos', label: 'profile.tab.videos' },
+    { id: 'guardados', label: 'profile.tab.saved' },
+    { id: 'gustados', label: 'profile.tab.liked' },
+  ] as const satisfies readonly { id: Tab; label: MessageKey }[];
 
   protected readonly profile = computed<CreatorProfile | null>(() => this.profiles.profile());
 
@@ -150,11 +155,11 @@ export class ProfilePage {
   protected readonly emptyText = computed(() => {
     switch (this.tab()) {
       case 'guardados':
-        return 'Aún no has guardado ningún clip. Toca el marcador en el feed.';
+        return this.i18n.t('profile.empty.saved');
       case 'gustados':
-        return 'Los clips a los que des me gusta aparecerán aquí.';
+        return this.i18n.t('profile.empty.liked');
       default:
-        return 'Todavía no hay publicaciones.';
+        return this.i18n.t('profile.empty.videos');
     }
   });
 
