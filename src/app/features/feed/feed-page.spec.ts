@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { MOCK_CLIPS } from '../../core/data/mock-feed';
-import { MOUNT_RADIUS } from '../../core/state/feed-store';
+import { FeedStore, MOUNT_RADIUS } from '../../core/state/feed-store';
 import { FeedPage } from './feed-page';
 
 /**
@@ -44,6 +44,23 @@ describe('FeedPage', () => {
 
     // Índice activo 0: se montan el 0 y sus vecinos existentes.
     expect(host.querySelectorAll('video').length).toBe(1 + MOUNT_RADIUS);
+  });
+
+  it('autorreproduce solo el clip activo', async () => {
+    // Regresión: el feed llegó a no autorreproducir con
+    // `prefers-reduced-motion`, que dejaba la app parada justo para quien
+    // declaró una necesidad de accesibilidad.
+    const played: HTMLMediaElement[] = [];
+    HTMLMediaElement.prototype.play = function (this: HTMLMediaElement) {
+      played.push(this);
+      return Promise.resolve();
+    };
+
+    const fixture = TestBed.createComponent(FeedPage);
+    await fixture.whenStable();
+
+    expect(played).toHaveLength(1);
+    expect(TestBed.inject(FeedStore).paused()).toBe(false);
   });
 
   it('desplaza el clip activo con las flechas del teclado', async () => {

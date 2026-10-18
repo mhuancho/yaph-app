@@ -32,7 +32,8 @@ import { Component, computed, input } from '@angular/core';
     }
 
     /* Movimiento reducido: la envolvente se queda fija y sigue informando de
-     * la forma del audio, solo deja de moverse. */
+     * la forma del audio, solo deja de moverse. Al contrario que el video, esto
+     * sí es decoración, y por eso aquí la preferencia manda. */
     @media (prefers-reduced-motion: reduce) {
       span {
         animation: none;

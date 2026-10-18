@@ -1,7 +1,6 @@
-import { computed, inject, linkedSignal, Service, signal } from '@angular/core';
+import { computed, linkedSignal, Service, signal } from '@angular/core';
 import { MOCK_CLIPS } from '../data/mock-feed';
 import { FeedCollection, VideoClip } from '../models/feed';
-import { ReducedMotion } from './reduced-motion';
 
 /** Cuántos clips se montan a cada lado del activo. Ver `shouldMount`. */
 export const MOUNT_RADIUS = 1;
@@ -14,8 +13,6 @@ const FOR_YOU: FeedCollection = { id: 'for-you', label: 'Para ti', clips: MOCK_C
  */
 @Service()
 export class FeedStore {
-  private readonly reducedMotion = inject(ReducedMotion);
-
   /**
    * Colección en reproducción. «Para ti» es un ranking y la parrilla de un
    * perfil es un listado por autor: el feed reproduce una u otra, y por eso la
@@ -41,11 +38,14 @@ export class FeedStore {
    * Pausa del clip activo. No significa "fuera de vista": un clip que sale de
    * pantalla se detiene por otra vía (`VideoStage` solo reproduce el activo).
    *
-   * Arranca en el valor de `prefers-reduced-motion`: con la preferencia activa
-   * nada se autorreproduce, pero el botón de play sigue funcionando. Si el
-   * autoplay se bloqueara con una condición aparte, pulsar play no haría nada.
+   * El feed autorreproduce siempre, también con `prefers-reduced-motion`. Esa
+   * preferencia existe para el movimiento decorativo —y el CSS la respeta al
+   * pie—, pero aquí el video ES el contenido: no reproducirlo deja la app
+   * inservible justo para quien declaró una necesidad de accesibilidad. Lo que
+   * WCAG 2.2.2 pide de un contenido que arranca solo es poder pararlo, y eso lo
+   * cubre el botón de reproducción a pantalla completa de `VideoStage`.
    */
-  readonly paused = signal(this.reducedMotion.enabled());
+  readonly paused = signal(false);
 
   private readonly likedIds = signal<ReadonlySet<string>>(new Set<string>());
   private readonly savedIds = signal<ReadonlySet<string>>(new Set<string>());
@@ -77,8 +77,8 @@ export class FeedStore {
     const clamped = Math.min(Math.max(index, 0), Math.max(this.total() - 1, 0));
     if (clamped === this.activeIndex()) return;
     this.activeIndex.set(clamped);
-    // Cada clip nuevo vuelve a la política por defecto del usuario.
-    this.paused.set(this.reducedMotion.enabled());
+    // Un clip nuevo arranca reproduciendo: la pausa es del clip, no del feed.
+    this.paused.set(false);
   }
 
   activateById(clipId: string): void {
@@ -96,7 +96,7 @@ export class FeedStore {
 
     this.current.set(collection);
     this.activeIndex.set(Math.max(index, 0));
-    this.paused.set(this.reducedMotion.enabled());
+    this.paused.set(false);
   }
 
   /** Vuelve a la recomendación general. */

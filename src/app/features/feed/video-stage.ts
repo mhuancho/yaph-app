@@ -34,6 +34,9 @@ import { InteractionRail } from './interaction-rail';
  * 3. El resplandor sale del metadato `accent` del clip, no de muestrear el
  *    frame con canvas: eso exigiría media con CORS, costaría CPU por frame y
  *    dejaría de funcionar con HLS cifrado.
+ * 4. La reproducción no consulta `prefers-reduced-motion`. Esa preferencia
+ *    gobierna el movimiento decorativo, no el contenido; lo que exige WCAG
+ *    2.2.2 es poder pararlo, y de eso se encarga el botón a pantalla completa.
  */
 @Component({
   selector: 'app-video-stage',

@@ -76,7 +76,11 @@ describe('FeedStore', () => {
     expect(store.isFollowed(clip.creator.id)).toBe(true);
   });
 
-  it('reanuda la reproducción al cambiar de clip', () => {
+  it('arranca reproduciendo y reanuda al cambiar de clip', () => {
+    // El feed autorreproduce siempre: `prefers-reduced-motion` gobierna el
+    // movimiento decorativo, no el contenido.
+    expect(store.paused()).toBe(false);
+
     store.togglePlayback();
     expect(store.paused()).toBe(true);
 

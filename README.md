@@ -262,9 +262,13 @@ que mostrar.
 - La caja de escritura solo recibe el foco al abrir cuando hay teclado
   físico: en un móvil levantaría el teclado virtual sobre el hilo que se
   quiere leer.
-- `prefers-reduced-motion` desactiva las animaciones decorativas **y** el
-  autoplay (`FeedStore.paused` arranca en el valor de la preferencia, de modo
-  que el botón de play sigue funcionando). También se respetan
+- `prefers-reduced-motion` desactiva las animaciones decorativas (pulso del me
+  gusta, barrido, resplandor, visualizador de audio) y el scroll suave, pero
+  **no** el autoplay: esa preferencia gobierna el movimiento decorativo, no el
+  contenido, y no reproducir el video deja la app inservible justo para quien
+  declaró una necesidad de accesibilidad. Lo que WCAG 2.2.2 exige de un
+  contenido que arranca solo es poder pararlo, y de eso se encarga el botón de
+  reproducción a pantalla completa. También se respetan
   `prefers-reduced-transparency` y `prefers-contrast`.
 - El color nunca es el único indicador: los deltas de tendencia llevan signo
   además de color.
