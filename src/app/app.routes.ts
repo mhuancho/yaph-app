@@ -5,8 +5,8 @@ import { Routes } from '@angular/router';
  * inicial. Las secundarias se cargan al navegar, que es lo que mantiene el
  * primer render por debajo del presupuesto de `angular.json`.
  *
- * Los `data` se enlazan a los `input()` de `StubPage` gracias a
- * `withComponentInputBinding()` en `app.config.ts`.
+ * Los params y query params se enlazan a los `input()` de cada página
+ * gracias a `withComponentInputBinding()` en `app.config.ts`.
  */
 export const routes: Routes = [
   {
@@ -37,12 +37,7 @@ export const routes: Routes = [
   {
     path: 'crear',
     title: 'YAPH — Crear',
-    data: {
-      heading: 'Crear',
-      blurb: 'Captura vertical, recorte 9:16 y mezcla de audio original.',
-      icon: 'create',
-    },
-    loadComponent: () => import('./features/stub/stub-page').then((m) => m.StubPage),
+    loadComponent: () => import('./features/create/create-page').then((m) => m.CreatePage),
   },
   {
     path: 'mensajes',

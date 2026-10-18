@@ -1,6 +1,7 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { CURRENT_PROFILE, MOCK_LIBRARY, MOCK_PROFILES } from '../data/mock-profiles';
 import { CreatorProfile, FeedCollection, VideoClip } from '../models/feed';
+import { ComposerStore } from './composer-store';
 import { FeedStore } from './feed-store';
 
 const EMPTY: readonly VideoClip[] = [];
@@ -15,6 +16,7 @@ const EMPTY: readonly VideoClip[] = [];
 @Service()
 export class ProfileStore {
   private readonly feed = inject(FeedStore);
+  private readonly composer = inject(ComposerStore);
 
   readonly profiles = signal<readonly CreatorProfile[]>(MOCK_PROFILES);
   readonly me = CURRENT_PROFILE;
@@ -25,7 +27,14 @@ export class ProfileStore {
   readonly profile = computed(() => this.byHandle(this.openHandle()));
   readonly isMe = computed(() => this.profile()?.id === this.me.id);
 
-  readonly posts = computed(() => this.libraryFor(this.profile()?.id ?? null));
+  /**
+   * Publicaciones del perfil abierto. Lo creado en esta sesión encabeza el
+   * propio: quien acaba de publicar espera ver su clip arriba, no al final.
+   */
+  readonly posts = computed(() => {
+    const library = this.libraryFor(this.profile()?.id ?? null);
+    return this.isMe() ? [...this.composer.published(), ...library] : library;
+  });
 
   /** Clips que esta persona tiene guardados; solo tiene sentido en el propio. */
   readonly saved = computed(() => this.feed.clips().filter((clip) => this.feed.isSaved(clip.id)));

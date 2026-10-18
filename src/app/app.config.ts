@@ -5,8 +5,9 @@ import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // `withComponentInputBinding` enlaza `data`/params de ruta a los `input()`
-    // del componente, que es lo que alimenta a `StubPage`.
+    // `withComponentInputBinding` enlaza params y query params de ruta a los
+    // `input()` del componente: de ahí salen el handle de `/perfil/:handle`,
+    // el `?q=` de la búsqueda y el `?con=` de los mensajes.
     //
     // No se añade `withInMemoryScrolling`: solo restaura el scroll del
     // documento y aquí el feed scrollea en su propio contenedor. La posición se

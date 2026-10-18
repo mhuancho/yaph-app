@@ -99,6 +99,19 @@ export class FeedStore {
     this.paused.set(false);
   }
 
+  /**
+   * Inserta un clip al principio de la recomendación general. Lo usa el
+   * composer: una publicación propia debe verse al instante, sin esperar a
+   * que el ranking la recoja.
+   */
+  prepend(clip: VideoClip): void {
+    this.current.update((collection) => ({
+      ...collection,
+      clips: [clip, ...collection.clips],
+    }));
+    this.activeIndex.set(0);
+  }
+
   /** Vuelve a la recomendación general. */
   resetToForYou(): void {
     if (this.current().id === FOR_YOU.id) return;
