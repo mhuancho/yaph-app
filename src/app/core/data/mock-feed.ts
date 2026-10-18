@@ -93,6 +93,8 @@ const CREATORS = {
 export const MOCK_CLIPS: readonly VideoClip[] = [
   {
     id: 'clip-neon-grid',
+    kind: 'short',
+    liveViewers: null,
     creator: CREATORS.nyx,
     description:
       'Rejilla infinita renderizada en tiempo real. Sin postproceso, todo sale del shader: 14 pases de raymarching a 60 fps en una GPU de portátil.',
@@ -106,6 +108,8 @@ export const MOCK_CLIPS: readonly VideoClip[] = [
   },
   {
     id: 'clip-pulse-wave',
+    kind: 'live',
+    liveViewers: 18_400,
     creator: CREATORS.mira,
     description:
       'Autómata celular reaccionando al kick del track. Cada célula viva sube un semitono: la música literalmente dibuja la imagen.',
@@ -125,6 +129,8 @@ export const MOCK_CLIPS: readonly VideoClip[] = [
   },
   {
     id: 'clip-holo-drift',
+    kind: 'short',
+    liveViewers: null,
     creator: CREATORS.lumen,
     description:
       'Degradados holográficos a 540p y 180 kB. El truco no es la resolución, es el dithering: mismo peso, cero banding.',
@@ -138,6 +144,8 @@ export const MOCK_CLIPS: readonly VideoClip[] = [
   },
   {
     id: 'clip-data-rain',
+    kind: 'short',
+    liveViewers: null,
     creator: CREATORS.orbe,
     description:
       'Lluvia de datos sobre la regla 110. Es Turing-completa, así que técnicamente este fondo podría ejecutar la app.',
@@ -151,6 +159,8 @@ export const MOCK_CLIPS: readonly VideoClip[] = [
   },
   {
     id: 'clip-spectral-bloom',
+    kind: 'short',
+    liveViewers: null,
     creator: CREATORS.kaze,
     description:
       'Floración espectral: bloom falso hecho con dos blurs y una resta. Pesa menos que una textura y corre en cualquier móvil.',
@@ -164,6 +174,8 @@ export const MOCK_CLIPS: readonly VideoClip[] = [
   },
   {
     id: 'clip-vector-dusk',
+    kind: 'live',
+    liveViewers: 2_740,
     creator: CREATORS.volt,
     description:
       'Atardecer vectorial en directo desde el estudio. Pregunten por el pipeline, lo explico en los comentarios.',
@@ -222,46 +234,22 @@ export const MOCK_SUGGESTED: readonly SuggestedCreator[] = [
 ];
 
 /**
- * Cola de comentarios que `TrendsStore` va soltando con un temporizador para
- * simular el stream en vivo. En producción esto llega por WebSocket/SSE.
+ * Cola de mensajes que `TrendsStore` va soltando con un temporizador para
+ * simular el chat de un directo. En producción esto llega por WebSocket/SSE.
  */
+function chat(id: string, handle: string, body: string, accent: string): LiveComment {
+  return { id, handle, body, accent, own: false };
+}
+
 export const MOCK_LIVE_COMMENTS: readonly LiveComment[] = [
-  { id: 'lc-1', handle: '@pix.el', body: 'el dithering en el segundo 4 👌', accent: '#00F5D4' },
-  {
-    id: 'lc-2',
-    handle: '@rae.synth',
-    body: '¿qué sampler usaste para el kick?',
-    accent: '#FF2A85',
-  },
-  {
-    id: 'lc-3',
-    handle: '@nullptr',
-    body: '540p y se ve mejor que mi 4K, injusto',
-    accent: '#7C5CFF',
-  },
-  {
-    id: 'lc-4',
-    handle: '@kuri.dev',
-    body: 'guardado para el proyecto del viernes',
-    accent: '#FFB020',
-  },
-  {
-    id: 'lc-5',
-    handle: '@vera.loop',
-    body: 'la transición del loop es perfecta',
-    accent: '#00F5D4',
-  },
-  { id: 'lc-6', handle: '@hex.mode', body: 'tutorial cuándo 🙏', accent: '#FF2A85' },
-  {
-    id: 'lc-7',
-    handle: '@sol.aria',
-    body: 'esto en una pantalla OLED debe ser ilegal',
-    accent: '#7C5CFF',
-  },
-  {
-    id: 'lc-8',
-    handle: '@mod.ular',
-    body: 'el panel de telemetría es un detallazo',
-    accent: '#00F5D4',
-  },
+  chat('lc-1', '@pix.el', 'el dithering en el segundo 4 👌', '#00F5D4'),
+  chat('lc-2', '@rae.synth', '¿qué sampler usaste para el kick?', '#FF2A85'),
+  chat('lc-3', '@nullptr', '540p y se ve mejor que mi 4K, injusto', '#7C5CFF'),
+  chat('lc-4', '@kuri.dev', 'guardado para el proyecto del viernes', '#FFB020'),
+  chat('lc-5', '@vera.loop', 'la transición del loop es perfecta', '#00F5D4'),
+  chat('lc-6', '@hex.mode', 'tutorial cuándo 🙏', '#FF2A85'),
+  chat('lc-7', '@sol.aria', 'esto en una pantalla OLED debe ser ilegal', '#7C5CFF'),
+  chat('lc-8', '@mod.ular', 'el panel de telemetría es un detallazo', '#00F5D4'),
+  chat('lc-9', '@pix.el', '¿cuántos espectadores llevas? 🔥', '#1B9AFF'),
+  chat('lc-10', '@kuri.dev', 'saluda a los del turno de noche 🌙', '#FFB020'),
 ];

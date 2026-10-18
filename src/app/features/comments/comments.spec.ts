@@ -17,6 +17,15 @@ import { Viewport } from '../../core/state/viewport';
  */
 const DESKTOP_VIEWPORT = { hasSidePanel: signal(true) };
 
+/** Primer clip emitiendo en directo del feed de demostración. */
+const LIVE_INDEX = MOCK_CLIPS.findIndex((clip) => clip.kind === 'live');
+
+function submitComposer(host: HTMLElement): void {
+  host
+    .querySelector('form')!
+    .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+}
+
 function stubBrowserMediaApis(): void {
   HTMLMediaElement.prototype.play = () => Promise.resolve();
   HTMLMediaElement.prototype.pause = () => undefined;
@@ -83,9 +92,7 @@ describe('Hilo de comentarios', () => {
     composer.dispatchEvent(new Event('input', { bubbles: true }));
     await fixture.whenStable();
 
-    host
-      .querySelector('form')!
-      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    submitComposer(host);
     await fixture.whenStable();
 
     expect(host.textContent).toContain('el borde del segundo 4 es otra cosa');
@@ -103,9 +110,7 @@ describe('Hilo de comentarios', () => {
     const submit = host.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     expect(submit.disabled).toBe(true);
 
-    host
-      .querySelector('form')!
-      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    submitComposer(host);
     await fixture.whenStable();
 
     expect(TestBed.inject(CommentsStore).countFor(MOCK_CLIPS[0])).toBe(
@@ -132,18 +137,156 @@ describe('Hilo de comentarios', () => {
     expect(host.textContent).toContain(MOCK_CLIPS[1].creator.handle);
   });
 
-  it('reserva los comentarios en vivo a los clips en directo', async () => {
+  it('reserva el chat del HUD a los clips en directo', async () => {
     const { fixture, host } = await render();
     const feed = TestBed.inject(FeedStore);
 
-    expect(feed.activeClip()?.creator.badge).not.toBe('live');
-    expect(host.textContent).not.toContain('COMENTARIOS EN VIVO');
+    expect(feed.activeClip()?.kind).toBe('short');
     expect(host.querySelector('[aria-live="polite"]')).toBeNull();
 
-    const liveIndex = MOCK_CLIPS.findIndex((clip) => clip.creator.badge === 'live');
-    feed.setActiveIndex(liveIndex);
+    feed.setActiveIndex(LIVE_INDEX);
     await fixture.whenStable();
 
     expect(host.querySelector('[aria-live="polite"]')).toBeTruthy();
+  });
+
+  describe('respuestas', () => {
+    it('prepara la respuesta y la cuelga del comentario', async () => {
+      const { fixture, host } = await render();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      host.querySelector<HTMLButtonElement>('button[aria-label^="Responder a "]')!.click();
+      await fixture.whenStable();
+      expect(host.textContent).toContain('Respondiendo a');
+
+      const composer = host.querySelector<HTMLTextAreaElement>('textarea')!;
+      composer.value = 'early-out, confirmado';
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      await fixture.whenStable();
+      submitComposer(host);
+      await fixture.whenStable();
+
+      // La respuesta vive dentro de la lista anidada del comentario padre, no
+      // como un comentario raíz más.
+      const nested = host.querySelector('ol ol');
+      expect(nested?.textContent).toContain('early-out, confirmado');
+      expect(host.textContent).not.toContain('Respondiendo a');
+    });
+
+    it('despliega y oculta las respuestas existentes', async () => {
+      const { fixture, host } = await render();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const toggle = [...host.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+        button.textContent?.includes('respuestas'),
+      )!;
+      expect(toggle.getAttribute('aria-expanded')).toBe('false');
+      expect(host.querySelector('ol ol')).toBeNull();
+
+      toggle.click();
+      await fixture.whenStable();
+      expect(host.querySelector('ol ol')).toBeTruthy();
+
+      toggle.click();
+      await fixture.whenStable();
+      expect(host.querySelector('ol ol')).toBeNull();
+    });
+  });
+
+  describe('emojis', () => {
+    it('inserta el emoji en la posición del cursor', async () => {
+      const { fixture, host } = await render();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const composer = host.querySelector<HTMLTextAreaElement>('textarea')!;
+      composer.value = 'qué nivel';
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      composer.setSelectionRange(3, 3);
+      await fixture.whenStable();
+
+      host.querySelector<HTMLButtonElement>('button[aria-label="Insertar emoji"]')!.click();
+      await fixture.whenStable();
+
+      host.querySelector<HTMLButtonElement>('button[aria-label="fuego"]')!.click();
+      await fixture.whenStable();
+
+      expect(host.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('qué🔥 nivel');
+      // El panel se cierra al elegir.
+      expect(host.querySelector('button[aria-label="fuego"]')).toBeNull();
+    });
+  });
+
+  describe('directos', () => {
+    it('ofrece dos pestañas y arranca en el chat', async () => {
+      const { fixture, host } = await render();
+      TestBed.inject(FeedStore).setActiveIndex(LIVE_INDEX);
+      await fixture.whenStable();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const tabs = host.querySelectorAll('[role="tab"]');
+      expect(tabs).toHaveLength(2);
+      expect(tabs[0].getAttribute('aria-selected')).toBe('true');
+      expect(host.textContent).toContain('Chat del directo');
+    });
+
+    it('cambia al hilo del clip desde la pestaña', async () => {
+      const { fixture, host } = await render();
+      TestBed.inject(FeedStore).setActiveIndex(LIVE_INDEX);
+      await fixture.whenStable();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const [, threadTab] = host.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+      threadTab.click();
+      await fixture.whenStable();
+
+      expect(threadTab.getAttribute('aria-selected')).toBe('true');
+      expect(host.textContent).toContain('comentarios');
+      expect(host.querySelector('[role="tabpanel"]')).toBeTruthy();
+    });
+
+    it('no muestra pestañas en un video corto', async () => {
+      const { fixture, host } = await render();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      expect(TestBed.inject(FeedStore).activeClip()?.kind).toBe('short');
+      expect(host.querySelector('[role="tablist"]')).toBeNull();
+    });
+
+    it('envía el mensaje al chat, no al hilo del clip', async () => {
+      const { fixture, host } = await render();
+      const feed = TestBed.inject(FeedStore);
+      feed.setActiveIndex(LIVE_INDEX);
+      await fixture.whenStable();
+
+      commentButton(host).click();
+      await fixture.whenStable();
+
+      const composer = host.querySelector<HTMLTextAreaElement>('textarea')!;
+      composer.value = 'buenas desde Lima 👋';
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      await fixture.whenStable();
+      submitComposer(host);
+      await fixture.whenStable();
+
+      expect(host.querySelector('[aria-live="polite"]')!.textContent).toContain(
+        'buenas desde Lima 👋',
+      );
+      // El hilo persistente del clip no se toca.
+      expect(TestBed.inject(CommentsStore).countFor(feed.activeClip()!)).toBe(
+        feed.activeClip()!.metrics.comments,
+      );
+    });
   });
 });

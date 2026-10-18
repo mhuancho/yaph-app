@@ -32,7 +32,10 @@ export type IconName =
   | 'bolt'
   | 'close'
   | 'send'
-  | 'pin';
+  | 'pin'
+  | 'emoji'
+  | 'reply'
+  | 'viewers';
 
 const PATHS: Readonly<Record<IconName, readonly string[]>> = {
   home: ['M3.5 11 12 3.8 20.5 11', 'M6 9.6V20.2h12V9.6', 'M10 20.2v-4.6h4v4.6'],
@@ -79,6 +82,17 @@ const PATHS: Readonly<Record<IconName, readonly string[]>> = {
   close: ['M6.2 6.2l11.6 11.6', 'M17.8 6.2 6.2 17.8'],
   send: ['M4 11.6 20.4 4l-7.6 16.4-2.6-6.2L4 11.6Z', 'M10.2 14.2 20.4 4'],
   pin: ['M9.4 3.6h5.2l-.8 5.4 3.2 3.2H7l3.2-3.2-.8-5.4Z', 'M12 11.8v8.6'],
+  emoji: [
+    'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+    'M8.6 14.2a4.2 4.2 0 0 0 6.8 0',
+    'M9.2 9.4h.01',
+    'M14.8 9.4h.01',
+  ],
+  reply: ['M9.4 7 4.6 11.6 9.4 16.2', 'M4.6 11.6h8.6a5.8 5.8 0 0 1 5.8 5.8v1.4'],
+  viewers: [
+    'M2.6 12S6 5.8 12 5.8 21.4 12 21.4 12 18 18.2 12 18.2 2.6 12 2.6 12Z',
+    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+  ],
 };
 
 @Component({

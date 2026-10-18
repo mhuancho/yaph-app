@@ -33,12 +33,26 @@ const COLLAPSE_THRESHOLD = 110;
             <span class="truncate font-display text-sm font-semibold text-ink">
               {{ clip().creator.handle }}
             </span>
-            @if (clip().creator.badge; as badge) {
+            @if (isLive()) {
+              <span
+                class="metric inline-flex shrink-0 items-center gap-1 rounded-full border border-neon-magenta/60 bg-neon-magenta/15 px-2 py-[3px] text-[0.5625rem] font-semibold tracking-[0.14em] text-neon-magenta uppercase shadow-neon-magenta"
+              >
+                <span class="size-1.5 animate-breathe rounded-full bg-current"></span>
+                en vivo
+              </span>
+            } @else if (clip().creator.badge; as badge) {
               <app-holo-badge [tier]="badge" />
             }
           </div>
+
+          <!-- En un directo importa quién está viendo ahora; en un corto, el
+               tamaño de la audiencia del creador. -->
           <p class="metric truncate text-[0.6875rem] text-ink-muted">
-            {{ clip().creator.followers | compact }} seguidores
+            @if (isLive()) {
+              {{ clip().liveViewers ?? 0 | compact }} viendo ahora
+            } @else {
+              {{ clip().creator.followers | compact }} seguidores
+            }
             @if (clip().location; as location) {
               · {{ location }}
             }
@@ -122,6 +136,8 @@ export class ClipOverlay {
   readonly playing = input(false);
 
   protected readonly feed = inject(FeedStore);
+
+  protected readonly isLive = computed(() => this.clip().kind === 'live');
 
   protected readonly descriptionId = computed(() => `clip-desc-${this.clip().id}`);
 

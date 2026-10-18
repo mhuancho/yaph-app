@@ -56,8 +56,19 @@ export interface ClipMetrics {
   readonly views: number;
 }
 
+/**
+ * Un directo y un video corto se consumen igual pero conversan distinto: el
+ * directo tiene un chat efímero y sincronizado con la emisión, el corto tiene
+ * un hilo persistente. Es una propiedad del clip, no de la insignia del
+ * creador: alguien marcado como «live» puede tener clips grabados.
+ */
+export type ClipKind = 'short' | 'live';
+
 export interface VideoClip {
   readonly id: string;
+  readonly kind: ClipKind;
+  /** Espectadores simultáneos; solo tiene sentido con `kind === 'live'`. */
+  readonly liveViewers: number | null;
   readonly creator: Creator;
   readonly description: string;
   readonly hashtags: readonly string[];
@@ -92,7 +103,13 @@ export interface ClipComment {
   readonly likes: number;
   /** Fijado por el creador: va siempre primero en el hilo. */
   readonly pinned: boolean;
-  readonly replies: number;
+  /**
+   * Comentario al que responde, o `null` si es raíz. Un solo nivel de
+   * anidamiento a propósito: responder a una respuesta cuelga del mismo padre,
+   * que es como se comporta cualquier hilo de video corto. Un árbol arbitrario
+   * obligaría a paginar por rama y no aporta nada a esta conversación.
+   */
+  readonly parentId: string | null;
   /** Lo acaba de escribir quien usa la app; se marca para distinguirlo. */
   readonly own: boolean;
 }
@@ -114,11 +131,17 @@ export interface SuggestedCreator {
   readonly mutuals: number;
 }
 
+/**
+ * Mensaje del chat de un directo. Es efímero: no se guarda, no se responde y
+ * no tiene contador de me gusta. Por eso no comparte tipo con `ClipComment`.
+ */
 export interface LiveComment {
   readonly id: string;
   readonly handle: string;
   readonly body: string;
   readonly accent: string;
+  /** Lo acaba de enviar quien usa la app. */
+  readonly own: boolean;
 }
 
 export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'error';

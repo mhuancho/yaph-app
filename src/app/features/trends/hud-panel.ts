@@ -38,9 +38,9 @@ import { TrendingCard } from './trending-card';
       <app-trending-card />
       <app-creators-card />
 
-      <!-- Los comentarios en vivo son del directo, no del clip: solo tienen
-           sentido cuando quien publica está emitiendo. En un video corto la
-           conversación va en el hilo del clip, que abre la barra lateral. -->
+      <!-- El chat es del directo, no del clip grabado: solo tiene sentido
+           mientras hay emisión. En un video corto la conversación va al hilo
+           del clip, que abre el icono de mensaje del rail. -->
       @if (isLive()) {
         <app-live-comments-card />
       }
@@ -65,5 +65,5 @@ export class HudPanel {
    * Al desmontarse la tarjeta se para también su temporizador: el stream
    * simulado no corre mientras se ven clips grabados.
    */
-  protected readonly isLive = computed(() => this.feed.activeClip()?.creator.badge === 'live');
+  protected readonly isLive = computed(() => this.feed.activeClip()?.kind === 'live');
 }

@@ -203,7 +203,11 @@ import { InteractionRail } from './interaction-rail';
             <span
               class="metric absolute right-3 bottom-[calc(var(--bottom-inset)+0.625rem)] z-30 text-[0.625rem] text-ink-muted tabular-nums"
             >
-              {{ telemetry.currentTime() | clock }} / {{ clip().durationSeconds | clock }}
+              @if (clip().kind === 'live') {
+                en directo
+              } @else {
+                {{ telemetry.currentTime() | clock }} / {{ clip().durationSeconds | clock }}
+              }
             </span>
           }
         </div>

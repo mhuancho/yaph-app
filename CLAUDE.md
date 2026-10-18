@@ -77,8 +77,12 @@ You are an expert in TypeScript, Angular, and scalable web application developme
   comentarios HTML: cierran el template literal.
 - `@Service()` para los stores; estado con signals, derivado con `computed()`,
   y `linkedSignal()` cuando debe reiniciarse al cambiar una fuente.
-- **Comentarios de clip ≠ comentarios de directo.** El hilo del clip vive en
-  `features/comments` y lo abre el rail; la tarjeta de directo del HUD solo se
-  monta cuando `creator.badge === 'live'`.
+- **Comentarios de clip ≠ chat de directo.** Son tipos distintos
+  (`ClipComment` persistente, `LiveComment` efímero) y lo decide `clip.kind`,
+  nunca la insignia del creador. El hilo vive en `features/comments`.
+- **Las respuestas se aplanan a un nivel**: responder a una respuesta cuelga
+  del mismo comentario raíz.
+- **Un panel flotante sobre texto va con fondo opaco**, no con `glass`: anidado
+  bajo otra superficie con `backdrop-filter` el desenfoque deja de aislar.
 - **Para un diálogo modal usa `<dialog>` + `showModal()`**, no un `div` con
   foco atrapado a mano.

@@ -12,12 +12,17 @@ totalmente basado en signals.
   <img src="docs/preview-tablet.jpg" alt="Vista intermedia" width="260">
   &nbsp;
   <img src="docs/preview-comentarios-movil.jpg" alt="Hoja de comentarios en móvil" width="260">
+  &nbsp;
+  <img src="docs/preview-emoji-movil.jpg" alt="Selector de emojis en móvil" width="260">
 </p>
 
-El icono de mensaje abre el hilo del clip con su caja de escritura: en la
-columna derecha cuando la hay, como hoja inferior modal cuando no.
+El icono de mensaje abre la conversación del clip: en la columna derecha
+cuando la hay, como hoja inferior modal cuando no. Un video corto tiene hilo
+con respuestas; un directo añade una pestaña con el chat de la emisión.
 
-![Hilo de comentarios](docs/preview-comentarios.jpg)
+![Hilo de comentarios con respuestas](docs/preview-comentarios.jpg)
+
+![Directo con chat y pestañas](docs/preview-directo.jpg)
 
 ---
 
@@ -45,7 +50,8 @@ npm start          # http://localhost:4200
 ```
 src/app/
 ├── core/
-│   ├── models/feed.ts            Modelo de dominio (todo readonly)
+│   ├── models/feed.ts            Modelo de dominio (todo readonly); `ClipKind`
+│   │                             separa directo de video corto
 │   ├── data/                     mock-feed.ts y mock-comments.ts — el seam
 │   │                             hacia el API real
 │   ├── state/
@@ -57,12 +63,13 @@ src/app/
 │   │   └── viewport.ts           Si la ventana tiene columna derecha
 │   ├── directives/in-view.ts     IntersectionObserver → clip activo
 │   └── util/                     format, noise (PRNG con semilla), media
-├── ui/                           Icon, AvatarOrb, HoloBadge, Soundwave,
-│                                 HudCard, Sparkline, pipes de métricas
+├── ui/                           Icon, AvatarOrb, HoloBadge, Soundwave, HudCard,
+│                                 Sparkline, EmojiPicker, pipes de métricas
 ├── layout/                       AppShell, NavDock, MobileTabBar, MobileTopBar
 └── features/
     ├── feed/                     FeedPage, VideoStage, ClipOverlay, InteractionRail
-    ├── comments/                 CommentsThread (hilo + composer) y CommentsSheet
+    ├── comments/                 CommentsThread (pestañas + composer), CommentRow,
+    │                             LiveChatList y CommentsSheet
     ├── trends/                   HudPanel + tarjetas de telemetría/tendencias/
     │                             creadores/comentarios de directo
     └── stub/                     Placeholder de las rutas aún no implementadas
@@ -119,12 +126,31 @@ sampler con `canvas.drawImage` exige media servido con CORS, cuesta CPU en cada
 frame y deja de funcionar en cuanto el video llega por HLS cifrado. Cada clip
 trae su par de colores en `accent`, resuelto en ingesta.
 
-**Comentarios del clip y comentarios de directo son cosas distintas.** El
-icono de mensaje del rail abre el hilo del clip, con su caja de escritura. La
-tarjeta «Comentarios en vivo» del HUD es del directo y solo se monta cuando
-quien publica está emitiendo (`creator.badge === 'live'`); al desmontarse se
-para también su temporizador, así que no hay trabajo de fondo viendo clips
-grabados.
+**Un directo y un video corto conversan distinto, y la UI lo refleja.** El
+tipo es del clip (`kind: 'short' | 'live'`), no de la insignia del creador:
+alguien marcado como «live» puede tener clips grabados. En un directo el panel
+ofrece dos pestañas —«En directo», el chat efímero sincronizado con la emisión,
+y «Comentarios», el hilo que quedará cuando termine—; en un corto solo está el
+hilo, sin selector que elegir. Son dos conversaciones reales, no dos vistas del
+mismo dato, y por eso `LiveComment` y `ClipComment` son tipos distintos: un
+mensaje de chat no se guarda, no se responde y no tiene me gusta.
+
+**El chat lleva recuento de suscriptores.** Lo consumen a la vez la tarjeta del
+HUD y la pestaña «En directo»; sin el recuento habría dos temporizadores
+empujando a la misma lista y el chat correría al doble de velocidad. Al
+desmontarse el último consumidor se para, así que no hay trabajo de fondo
+viendo clips grabados.
+
+**Las respuestas se aplanan a un nivel.** Responder a una respuesta cuelga del
+mismo comentario raíz. Un árbol arbitrario obliga a paginar por rama y a
+resolver el sangrado en móvil, y no aporta nada a esta conversación.
+
+**El selector de emojis no usa la Popover API.** Un `popover` vive en la capa
+superior y su colocación junto al disparador depende de CSS Anchor Positioning,
+que todavía no está en todos los motores. Un panel absoluto se coloca igual en
+todas partes y funciona dentro del `<dialog>` modal de la hoja móvil, donde la
+capa superior ya está ocupada. Su fondo es opaco: anidado bajo otra superficie
+con `backdrop-filter`, el desenfoque deja de aislar el texto de debajo.
 
 **El hilo reutiliza la columna derecha en vez de abrir una cuarta.** El marco
 de video está limitado por la altura, así que conmutar el contenido de esa
@@ -216,10 +242,13 @@ responden `403` desde hace tiempo. Para regenerarlos:
 - **La descripción decide si es colapsable por longitud de texto**, no midiendo
   el alto real. Un `ResizeObserver` por clip visible no paga su coste para
   decidir si mostrar un enlace; el umbral falla como mucho en una línea.
-- **Comentarios, tendencias y creadores son datos simulados.** Solo la
-  telemetría de reproducción es real. El hilo no pagina ni admite respuestas
-  («Responder» y «Ver N respuestas» son los enganches, sin lógica detrás), y
-  lo publicado vive en memoria: se pierde al recargar.
+- **Comentarios, chat, tendencias y creadores son datos simulados.** Solo la
+  telemetría de reproducción es real. El hilo no pagina y lo publicado vive en
+  memoria: se pierde al recargar. El chat del directo es una cola que cicla con
+  un temporizador, no un WebSocket.
+- **El selector de emojis es una lista curada de 40, no el catálogo Unicode.**
+  Uno exhaustivo necesita índice de búsqueda, datos de tonos de piel y carga
+  diferida; en un composer de comentarios casi nadie baja del primer grupo.
 - **La caja de escritura usa un signal, no Signal Forms.** Es un campo de
   texto libre con un límite de longitud: sin esquema, campos cruzados ni
   envío asíncrono, `@angular/forms/signals` no aportaría nada. Cuando el
