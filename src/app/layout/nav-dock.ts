@@ -3,7 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { FeedStore } from '../core/state/feed-store';
 import { Icon } from '../ui/icon';
 import { BrandMark } from './brand-mark';
-import { NAV_ITEMS } from './nav-items';
+import { NAV_ITEMS, NavItem } from './nav-items';
 
 /**
  * Dock lateral flotante (desktop).
@@ -24,7 +24,12 @@ import { NAV_ITEMS } from './nav-items';
       <div
         class="glass edge-gradient edge-live flex flex-col items-center gap-2 rounded-[1.75rem] p-2.5 shadow-hud"
       >
-        <a routerLink="/" class="mb-1 rounded-xl" aria-label="YAPH, ir al inicio">
+        <a
+          routerLink="/"
+          class="mb-1 rounded-xl"
+          aria-label="YAPH, ir al inicio"
+          (click)="feed.resetToForYou()"
+        >
           <app-brand-mark />
         </a>
 
@@ -33,6 +38,7 @@ import { NAV_ITEMS } from './nav-items';
             <li class="group relative">
               <a
                 [routerLink]="item.path"
+                (click)="onNavigate(item)"
                 routerLinkActive="text-neon-cyan bg-neon-cyan/10 shadow-neon-cyan"
                 [routerLinkActiveOptions]="{ exact: item.exact }"
                 #active="routerLinkActive"
@@ -82,4 +88,13 @@ import { NAV_ITEMS } from './nav-items';
 export class NavDock {
   protected readonly feed = inject(FeedStore);
   protected readonly navItems = NAV_ITEMS;
+
+  /**
+   * Pulsar «Inicio» devuelve a la recomendación general. Sin esto, quien
+   * entró a un video desde un perfil seguiría recorriendo esa colección sin
+   * forma evidente de salir.
+   */
+  protected onNavigate(item: NavItem): void {
+    if (item.exact) this.feed.resetToForYou();
+  }
 }

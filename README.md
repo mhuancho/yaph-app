@@ -24,6 +24,18 @@ con respuestas; un directo añade una pestaña con el chat de la emisión.
 
 ![Directo con chat y pestañas](docs/preview-directo.jpg)
 
+Cada creador tiene perfil, con su parrilla de publicaciones. Abrir una
+miniatura hace que el feed reproduzca los videos de esa persona en vez de la
+recomendación general.
+
+![Perfil propio con pestañas](docs/preview-perfil.jpg)
+
+<p align="center">
+  <img src="docs/preview-perfil-directo.jpg" alt="Perfil emitiendo en directo" width="420">
+  &nbsp;
+  <img src="docs/preview-perfil-movil.jpg" alt="Perfil en móvil" width="220">
+</p>
+
 ---
 
 ## Puesta en marcha
@@ -52,10 +64,12 @@ src/app/
 ├── core/
 │   ├── models/feed.ts            Modelo de dominio (todo readonly); `ClipKind`
 │   │                             separa directo de video corto
-│   ├── data/                     mock-feed.ts y mock-comments.ts — el seam
-│   │                             hacia el API real
+│   ├── data/                     mock-feed.ts, mock-comments.ts y
+│   │                             mock-profiles.ts — el seam hacia el API real
 │   ├── state/
-│   │   ├── feed-store.ts         Clip activo, likes, guardados, ventana de montaje
+│   │   ├── feed-store.ts         Colección en reproducción, clip activo, likes,
+│   │   │                         guardados y ventana de montaje
+│   │   ├── profile-store.ts      Perfil abierto, biblioteca y estado en directo
 │   │   ├── comments-store.ts     Hilo del clip, publicación y panel abierto
 │   │   ├── trends-store.ts       Tendencias y stream simulado de directos
 │   │   ├── playback-telemetry-store.ts   Telemetría real del <video> activo
@@ -70,13 +84,15 @@ src/app/
     ├── feed/                     FeedPage, VideoStage, ClipOverlay, InteractionRail
     ├── comments/                 CommentsThread (pestañas + composer), CommentRow,
     │                             LiveChatList y CommentsSheet
+    ├── profile/                  ProfilePage, ProfileHeader, ClipGrid y ClipTile
     ├── trends/                   HudPanel + tarjetas de telemetría/tendencias/
     │                             creadores/comentarios de directo
     └── stub/                     Placeholder de las rutas aún no implementadas
 ```
 
 Rutas: `/` (feed, en el bundle inicial) y `/explorar`, `/crear`, `/mensajes`,
-`/perfil` por `loadComponent`. Build de producción: **~85 kB transferidos** en
+`/perfil`, `/perfil/:handle` por `loadComponent`. El handle viaja con la arroba
+(`/perfil/@nyx.render`), como la URL que la gente copia y pega. Build de producción: **~85 kB transferidos** en
 el arranque.
 
 ---
@@ -125,6 +141,32 @@ la causa clásica del scroll a tirones en este tipo de feed.
 sampler con `canvas.drawImage` exige media servido con CORS, cuesta CPU en cada
 frame y deja de funcionar en cuanto el video llega por HLS cifrado. Cada clip
 trae su par de colores en `accent`, resuelto en ingesta.
+
+**Un perfil y el feed son la misma vista desde dos sitios.** Abrir una
+miniatura no lleva a una pantalla de detalle: el feed cambia de colección y
+reproduce las publicaciones de esa persona empezando por el clip pulsado, con
+una barra que dice de dónde viene y devuelve a «Para ti». Por eso la lista de
+clips no es un signal suelto en `FeedStore` sino parte de la colección activa:
+«Para ti» es un ranking y la parrilla de un perfil es un listado por autor, y
+el reproductor tiene que saber cuál está recorriendo.
+
+**Un solo componente para el perfil propio y el ajeno.** Cambian las acciones
+de la cabecera y las pestañas, no la estructura. Dos componentes casi iguales
+garantizan que uno se quede atrás.
+
+**La parrilla no monta reproductores.** Doce miniaturas serían doce
+decodificadores. Cada celda dibuja el póster procedural del clip, el mismo que
+usa el reproductor mientras carga, así que miniatura y video coinciden. La
+celda es 3:4 y no 9:16: recorta el vertical, como cualquier parrilla de perfil,
+y así caben dos filas de un vistazo.
+
+**«En directo» no es una bandera del perfil.** Es consecuencia de tener una
+publicación emitiendo (`clip.kind === 'live'`), igual que en el feed. Así el
+anillo del avatar, el botón «Ver directo» y el clip no pueden contradecirse.
+
+**El seguimiento vive solo en `FeedStore`.** El perfil lo lee de ahí en vez de
+guardar el suyo: con dos fuentes, un perfil podría decir «Siguiendo» mientras
+el rail del feed dice lo contrario.
 
 **Un directo y un video corto conversan distinto, y la UI lo refleja.** El
 tipo es del clip (`kind: 'short' | 'live'`), no de la insignia del creador:
@@ -254,6 +296,10 @@ responden `403` desde hace tiempo. Para regenerarlos:
 - **La descripción decide si es colapsable por longitud de texto**, no midiendo
   el alto real. Un `ResizeObserver` por clip visible no paga su coste para
   decidir si mostrar un enlace; el umbral falla como mucho en una línea.
+- **Las publicaciones de un perfil se generan con una semilla.** Lo único que
+  cambia entre ellas son las métricas, y escribir decenas a mano no aportaba
+  nada; con `Math.random()` la parrilla cambiaría en cada render y en cada
+  test. Los videos se reutilizan entre perfiles.
 - **Comentarios, chat, tendencias y creadores son datos simulados.** Solo la
   telemetría de reproducción es real. El hilo no pagina y lo publicado vive en
   memoria: se pierde al recargar. El chat del directo es una cola que cicla con

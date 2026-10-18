@@ -1,5 +1,6 @@
 import { afterNextRender, Component, ElementRef, inject, viewChildren } from '@angular/core';
 import { InView } from '../../core/directives/in-view';
+import { Icon } from '../../ui/icon';
 import { FeedStore } from '../../core/state/feed-store';
 import { ReducedMotion } from '../../core/state/reduced-motion';
 import { VideoStage } from './video-stage';
@@ -17,9 +18,27 @@ import { VideoStage } from './video-stage';
  */
 @Component({
   selector: 'app-feed-page',
-  imports: [VideoStage, InView],
-  host: { class: 'block h-full' },
+  imports: [VideoStage, InView, Icon],
+  host: { class: 'relative block h-full' },
   template: `
+    <!-- Origen de la colección. Solo aparece al llegar desde un perfil, que es
+         cuando el scroll deja de recorrer la recomendación general. -->
+    @if (!feed.isForYou()) {
+      <div
+        class="pointer-events-none absolute inset-x-0 top-[max(0.9rem,env(safe-area-inset-top))] z-40 flex justify-center px-4 md:top-5"
+      >
+        <button
+          type="button"
+          class="glass-flat pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/15 px-3.5 py-1.5 text-xs text-ink shadow-hud transition-colors duration-200 hover:border-neon-cyan/50"
+          (click)="feed.resetToForYou()"
+        >
+          <app-icon name="chevron-down" class="size-3.5 rotate-90" [strokeWidth]="2" />
+          <span class="metric text-[0.6875rem] text-ink-muted">videos de</span>
+          {{ feed.collection().label }}
+        </button>
+      </div>
+    }
+
     <div
       #scroller
       role="feed"

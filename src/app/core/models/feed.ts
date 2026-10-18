@@ -24,6 +24,19 @@ export interface Creator extends CommentAuthor {
   readonly followers: number;
 }
 
+/**
+ * Ficha completa de un perfil. Separada de `Creator` porque la biografía, los
+ * enlaces y los contadores agregados no viajan en cada clip del feed: son una
+ * consulta propia que solo se hace al abrir el perfil.
+ */
+export interface CreatorProfile extends Creator {
+  readonly bio: string;
+  readonly link: string | null;
+  readonly following: number;
+  /** Me gusta acumulados en todos sus clips. */
+  readonly likes: number;
+}
+
 export interface AccentPair {
   readonly from: string;
   readonly to: string;
@@ -63,6 +76,16 @@ export interface ClipMetrics {
  * creador: alguien marcado como «live» puede tener clips grabados.
  */
 export type ClipKind = 'short' | 'live';
+
+/**
+ * Lista que el feed está reproduciendo. Lleva su propia etiqueta para que la
+ * vista pueda decir de dónde salió sin consultar al router.
+ */
+export interface FeedCollection {
+  readonly id: string;
+  readonly label: string;
+  readonly clips: readonly VideoClip[];
+}
 
 export interface VideoClip {
   readonly id: string;

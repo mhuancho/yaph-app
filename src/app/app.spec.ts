@@ -1,7 +1,7 @@
-import { provideRouter } from '@angular/router';
+import { appConfig } from './app.config';
+
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
-import { routes } from './app.routes';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -11,7 +11,7 @@ describe('App', () => {
 
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes)],
+      providers: [...appConfig.providers],
     }).compileComponents();
   });
 

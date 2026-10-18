@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Icon } from '../ui/icon';
-import { NAV_ITEMS } from './nav-items';
+import { FeedStore } from '../core/state/feed-store';
+import { NAV_ITEMS, NavItem } from './nav-items';
 
 /**
  * Barra inferior (móvil).
@@ -37,6 +38,7 @@ import { NAV_ITEMS } from './nav-items';
             } @else {
               <a
                 [routerLink]="item.path"
+                (click)="onNavigate(item)"
                 routerLinkActive="text-neon-cyan"
                 [routerLinkActiveOptions]="{ exact: item.exact }"
                 #active="routerLinkActive"
@@ -63,5 +65,11 @@ import { NAV_ITEMS } from './nav-items';
   `,
 })
 export class MobileTabBar {
+  private readonly feed = inject(FeedStore);
   protected readonly navItems = NAV_ITEMS;
+
+  /** Igual que en el dock: «Inicio» vuelve a la recomendación general. */
+  protected onNavigate(item: NavItem): void {
+    if (item.exact) this.feed.resetToForYou();
+  }
 }

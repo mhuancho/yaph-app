@@ -77,25 +77,10 @@ import { InteractionRail } from './interaction-rail';
       opacity: 0.85;
     }
 
-    /* Póster procedural: siempre presente bajo el video, así que no hay flash
-     * negro mientras llegan los primeros frames ni cuando el clip falla. */
-    .poster {
-      background:
-        radial-gradient(
-          120% 90% at 20% 12%,
-          color-mix(in oklab, var(--glow-from) 55%, transparent),
-          transparent 62%
-        ),
-        radial-gradient(
-          120% 90% at 80% 88%,
-          color-mix(in oklab, var(--glow-to) 50%, transparent),
-          transparent 64%
-        ),
-        linear-gradient(165deg, #0b0b14, #05050a);
-    }
-
-    /* Líneas de barrido solo en el póster (capa estática). Sobre el video en
-     * reproducción, un blend por frame cuesta demasiado para lo que aporta. */
+    /* El fondo lo pone la utilidad clip-poster, compartida con la parrilla
+     * del perfil. Aquí solo se añaden las líneas de barrido, que son propias
+     * del reproductor: sobre el video en reproducción un blend por frame
+     * cuesta demasiado, por eso van únicamente en esta capa estática. */
     .poster::after {
       content: '';
       position: absolute;
@@ -131,7 +116,7 @@ import { InteractionRail } from './interaction-rail';
         <div
           class="relative z-10 h-full w-full overflow-hidden bg-carbon md:rounded-stage md:border md:border-white/10"
         >
-          <div class="poster absolute inset-0"></div>
+          <div class="poster clip-poster absolute inset-0"></div>
 
           @if (mounted() && !failed()) {
             <video

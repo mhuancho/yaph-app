@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { MOCK_CLIPS } from '../../core/data/mock-feed';
 import { MOUNT_RADIUS } from '../../core/state/feed-store';
 import { FeedPage } from './feed-page';
@@ -18,7 +19,9 @@ function stubBrowserMediaApis(): void {
 describe('FeedPage', () => {
   beforeEach(() => {
     stubBrowserMediaApis();
-    TestBed.configureTestingModule({ imports: [FeedPage] });
+    // El overlay enlaza los handles al perfil, así que `RouterLink` necesita
+    // un router aunque esta prueba no navegue.
+    TestBed.configureTestingModule({ imports: [FeedPage], providers: [provideRouter([])] });
   });
 
   it('expone la semántica de feed con un artículo por clip', async () => {

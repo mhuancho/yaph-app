@@ -28,18 +28,18 @@ const CLIP_BASE = 'clips';
 const MP4_TYPE = 'video/mp4; codecs="avc1.4D401F, mp4a.40.2"';
 const WEBM_TYPE = 'video/webm; codecs="vp9, opus"';
 
-function clipSources(name: string): readonly VideoSource[] {
+export function clipSources(name: string): readonly VideoSource[] {
   return [
     { src: `${CLIP_BASE}/${name}.mp4`, type: MP4_TYPE },
     { src: `${CLIP_BASE}/${name}.webm`, type: WEBM_TYPE },
   ];
 }
 
-function track(id: string, title: string, author: string, uses: number): AudioTrack {
+export function track(id: string, title: string, author: string, uses: number): AudioTrack {
   return { id, title, author, uses, envelope: seededSeries(`audio:${id}`, 32) };
 }
 
-const CREATORS = {
+export const CREATORS = {
   nyx: {
     id: 'c-nyx',
     handle: '@nyx.render',

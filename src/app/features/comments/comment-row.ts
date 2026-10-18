@@ -1,4 +1,5 @@
 import { Component, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ClipComment } from '../../core/models/feed';
 import { CommentsStore } from '../../core/state/comments-store';
 import { AvatarOrb } from '../../ui/avatar-orb';
@@ -15,16 +16,19 @@ import { AgePipe, CompactPipe } from '../../ui/metric-pipes';
  */
 @Component({
   selector: 'app-comment-row',
-  imports: [AvatarOrb, HoloBadge, Icon, CompactPipe, AgePipe],
+  imports: [AvatarOrb, HoloBadge, Icon, CompactPipe, AgePipe, RouterLink],
   host: { class: 'flex gap-3' },
   template: `
     <app-avatar-orb class="mt-0.5" [creator]="comment().author" size="sm" />
 
     <div class="min-w-0 flex-1">
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span class="truncate text-[0.8125rem] font-medium text-ink">
+        <a
+          [routerLink]="['/perfil', comment().author.handle]"
+          class="truncate text-[0.8125rem] font-medium text-ink transition-colors hover:text-neon-cyan"
+        >
           {{ comment().author.handle }}
-        </span>
+        </a>
 
         @if (comment().author.badge; as badge) {
           <app-holo-badge [tier]="badge" />

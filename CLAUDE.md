@@ -86,3 +86,10 @@ You are an expert in TypeScript, Angular, and scalable web application developme
   bajo otra superficie con `backdrop-filter` el desenfoque deja de aislar.
 - **Para un diálogo modal usa `<dialog>` + `showModal()`**, no un `div` con
   foco atrapado a mano.
+- **Los specs que montan `App` usan `appConfig.providers`**, no un
+  `provideRouter(routes)` suelto: así no pueden perderse opciones que la app sí
+  tiene (como `withComponentInputBinding`, del que depende `/perfil/:handle`).
+- **La parrilla del perfil no monta `<video>`.** Una celda dibuja el póster
+  procedural del clip con la utilidad `clip-poster`.
+- **«En directo» se deriva de `clip.kind`**, nunca de una bandera del perfil ni
+  de la insignia del creador.

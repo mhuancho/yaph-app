@@ -35,7 +35,9 @@ export type IconName =
   | 'pin'
   | 'emoji'
   | 'reply'
-  | 'viewers';
+  | 'viewers'
+  | 'edit'
+  | 'grid';
 
 const PATHS: Readonly<Record<IconName, readonly string[]>> = {
   home: ['M3.5 11 12 3.8 20.5 11', 'M6 9.6V20.2h12V9.6', 'M10 20.2v-4.6h4v4.6'],
@@ -93,6 +95,8 @@ const PATHS: Readonly<Record<IconName, readonly string[]>> = {
     'M2.6 12S6 5.8 12 5.8 21.4 12 21.4 12 18 18.2 12 18.2 2.6 12 2.6 12Z',
     'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   ],
+  edit: ['M4 20h4.2L19 9.2a2.1 2.1 0 0 0-3-3L5.2 17v3Z', 'M14.4 6.6l3 3'],
+  grid: ['M4 4h7v7H4V4Z', 'M13 4h7v7h-7V4Z', 'M4 13h7v7H4v-7Z', 'M13 13h7v7h-7v-7Z'],
 };
 
 @Component({

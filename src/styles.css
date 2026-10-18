@@ -221,6 +221,24 @@
   }
 }
 
+/* Póster procedural de un clip, a partir del acento que el propio clip expone
+ * como variables. Lo comparten el reproductor y las miniaturas del perfil, así
+ * que un clip se ve igual en el feed y en la parrilla. */
+@utility clip-poster {
+  background:
+    radial-gradient(
+      120% 90% at 20% 12%,
+      color-mix(in oklab, var(--glow-from) 55%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      120% 90% at 80% 88%,
+      color-mix(in oklab, var(--glow-to) 50%, transparent),
+      transparent 64%
+    ),
+    linear-gradient(165deg, #0b0b14, #05050a);
+}
+
 /* Rejilla técnica tenue para las tarjetas HUD. */
 @utility hud-grid {
   background-image:

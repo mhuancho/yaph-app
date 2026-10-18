@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FeedStore } from '../../core/state/feed-store';
 import { TrendsStore } from '../../core/state/trends-store';
 import { AvatarOrb } from '../../ui/avatar-orb';
@@ -8,7 +9,7 @@ import { CompactPipe } from '../../ui/metric-pipes';
 
 @Component({
   selector: 'app-creators-card',
-  imports: [HudCard, AvatarOrb, HoloBadge, CompactPipe],
+  imports: [HudCard, AvatarOrb, HoloBadge, CompactPipe, RouterLink],
   host: { class: 'block' },
   template: `
     <app-hud-card heading="Creadores sugeridos" icon="users">
@@ -19,9 +20,12 @@ import { CompactPipe } from '../../ui/metric-pipes';
 
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5">
-                <span class="truncate text-[0.8125rem] font-medium text-ink">
+                <a
+                  [routerLink]="['/perfil', item.creator.handle]"
+                  class="truncate text-[0.8125rem] font-medium text-ink transition-colors hover:text-neon-cyan"
+                >
                   {{ item.creator.handle }}
-                </span>
+                </a>
                 @if (item.creator.badge; as badge) {
                   <app-holo-badge [tier]="badge" />
                 }

@@ -46,13 +46,14 @@ export const routes: Routes = [
   },
   {
     path: 'perfil',
+    title: 'YAPH — Mi perfil',
+    loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
+  },
+  {
+    // El handle viaja con la arroba, como en la URL que la gente copia y pega.
+    path: 'perfil/:handle',
     title: 'YAPH — Perfil',
-    data: {
-      heading: 'Perfil',
-      blurb: 'Tus clips, borradores, guardados y métricas de creador.',
-      icon: 'profile',
-    },
-    loadComponent: () => import('./features/stub/stub-page').then((m) => m.StubPage),
+    loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
   },
   { path: '**', redirectTo: '' },
 ];

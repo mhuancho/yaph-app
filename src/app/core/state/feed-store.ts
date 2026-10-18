@@ -1,10 +1,12 @@
 import { computed, inject, linkedSignal, Service, signal } from '@angular/core';
 import { MOCK_CLIPS } from '../data/mock-feed';
-import { VideoClip } from '../models/feed';
+import { FeedCollection, VideoClip } from '../models/feed';
 import { ReducedMotion } from './reduced-motion';
 
 /** Cuántos clips se montan a cada lado del activo. Ver `shouldMount`. */
 export const MOUNT_RADIUS = 1;
+
+const FOR_YOU: FeedCollection = { id: 'for-you', label: 'Para ti', clips: MOCK_CLIPS };
 
 /**
  * Estado del feed: qué clip está activo, qué ha tocado el usuario y qué debe
@@ -14,7 +16,15 @@ export const MOUNT_RADIUS = 1;
 export class FeedStore {
   private readonly reducedMotion = inject(ReducedMotion);
 
-  readonly clips = signal<readonly VideoClip[]>(MOCK_CLIPS);
+  /**
+   * Colección en reproducción. «Para ti» es un ranking y la parrilla de un
+   * perfil es un listado por autor: el feed reproduce una u otra, y por eso la
+   * lista de clips no es un signal suelto sino parte de la colección activa.
+   */
+  private readonly current = signal<FeedCollection>(FOR_YOU);
+
+  readonly collection = computed(() => this.current());
+  readonly clips = computed(() => this.current().clips);
   readonly activeIndex = signal(0);
 
   readonly activeClip = computed<VideoClip | null>(() => this.clips()[this.activeIndex()] ?? null);
@@ -75,6 +85,27 @@ export class FeedStore {
     const index = this.clips().findIndex((clip) => clip.id === clipId);
     if (index >= 0) this.setActiveIndex(index);
   }
+
+  /**
+   * Reproduce otra colección empezando por un clip concreto: es lo que ocurre
+   * al abrir un video desde un perfil, donde el scroll vertical recorre los
+   * videos de esa persona y no la recomendación general.
+   */
+  playCollection(collection: FeedCollection, startClipId?: string): void {
+    const index = startClipId ? collection.clips.findIndex((c) => c.id === startClipId) : 0;
+
+    this.current.set(collection);
+    this.activeIndex.set(Math.max(index, 0));
+    this.paused.set(this.reducedMotion.enabled());
+  }
+
+  /** Vuelve a la recomendación general. */
+  resetToForYou(): void {
+    if (this.current().id === FOR_YOU.id) return;
+    this.playCollection(FOR_YOU);
+  }
+
+  readonly isForYou = computed(() => this.current().id === FOR_YOU.id);
 
   next(): void {
     this.setActiveIndex(this.activeIndex() + 1);

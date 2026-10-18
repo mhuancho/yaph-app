@@ -1,4 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { VideoClip } from '../../core/models/feed';
 import { FeedStore } from '../../core/state/feed-store';
 import { AvatarOrb } from '../../ui/avatar-orb';
@@ -20,19 +21,27 @@ const COLLAPSE_THRESHOLD = 110;
  */
 @Component({
   selector: 'app-clip-overlay',
-  imports: [AvatarOrb, HoloBadge, Icon, Soundwave, CompactPipe],
+  imports: [AvatarOrb, HoloBadge, Icon, Soundwave, CompactPipe, RouterLink],
   host: { class: 'block' },
   template: `
     <div class="flex flex-col gap-2.5">
       <!-- Creador -->
       <div class="flex items-center gap-2.5">
-        <app-avatar-orb [creator]="clip().creator" size="sm" />
+        <a
+          [routerLink]="profileLink()"
+          [attr.aria-label]="'Ver el perfil de ' + clip().creator.handle"
+        >
+          <app-avatar-orb [creator]="clip().creator" size="sm" />
+        </a>
 
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span class="truncate font-display text-sm font-semibold text-ink">
+            <a
+              [routerLink]="profileLink()"
+              class="truncate font-display text-sm font-semibold text-ink transition-colors hover:text-neon-cyan"
+            >
               {{ clip().creator.handle }}
-            </span>
+            </a>
             @if (isLive()) {
               <span
                 class="metric inline-flex shrink-0 items-center gap-1 rounded-full border border-neon-magenta/60 bg-neon-magenta/15 px-2 py-[3px] text-[0.5625rem] font-semibold tracking-[0.14em] text-neon-magenta uppercase shadow-neon-magenta"
@@ -138,6 +147,8 @@ export class ClipOverlay {
   protected readonly feed = inject(FeedStore);
 
   protected readonly isLive = computed(() => this.clip().kind === 'live');
+
+  protected readonly profileLink = computed(() => ['/perfil', this.clip().creator.handle]);
 
   protected readonly descriptionId = computed(() => `clip-desc-${this.clip().id}`);
 
